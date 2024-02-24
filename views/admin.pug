@@ -1,0 +1,23 @@
+html
+head
+  title= title
+  style
+    include ../static/output.css
+body.flex.flex-col.gap-12.justify-center.p-12.bg-gray-700.text-center.border-8.border-gray-500.text-6xl
+  h1.p-8.font-bold.text-gray-400= message
+  .cam-display.flex.justify-center.p-32.text-red-800.font-bold.text-9xl.bg-gray-900.uppercase CAM
+  .message-display.flex.justify-center.p-32.text-gray-500.font-bold.text-8xl.bg-gray-800.uppercase Üzenet
+  div.flex.flex-col.gap-12.justify-center
+    //(class="max-w-[800px]")
+    a.cam-1(href='javascript:void(0)').p-12.bg-gray-600.text-7xl.font-bold(class="hover:bg-gray-400") CAM-1
+    a.cam-2(href='javascript:void(0)').p-12.bg-gray-600.text-7xl.font-bold(class="hover:bg-gray-400") CAM-2
+    a.cam-3(href='javascript:void(0)').p-12.bg-gray-600.text-7xl.font-bold(class="hover:bg-gray-400") CAM-3
+  div.flex.flex-col.gap-12.justify-center
+    a.x-x(href='javascript:void(0)').p-12.bg-gray-500.text-7xl.font-bold(class="hover:bg-gray-400") Üres
+    a.focus(href='javascript:void(0)').p-12.bg-gray-500.text-7xl.font-bold(class="hover:bg-gray-400") Focus
+    a.total(href='javascript:void(0)').p-12.bg-gray-500.text-7xl.font-bold(class="hover:bg-gray-400") Totál
+    a.kozeli(href='javascript:void(0)').p-12.bg-gray-500.text-7xl.font-bold(class="hover:bg-gray-400") Közeli
+        
+  script(src='/socket.io/socket.io.js')
+  script
+    include ../static/script.js
