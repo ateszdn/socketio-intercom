@@ -812,6 +812,18 @@ video {
   display: none;
 }
 
+.aspect-\[6\/5\] {
+  aspect-ratio: 6/5;
+}
+
+.aspect-\[3\/2\] {
+  aspect-ratio: 3/2;
+}
+
+.aspect-\[5\/3\] {
+  aspect-ratio: 5/3;
+}
+
 .w-\[this-is\\\\\] {
   width: this-is\\;
 }
@@ -1849,6 +1861,10 @@ video {
           box-decoration-break: clone;
 }
 
+.bg-cover {
+  background-size: cover;
+}
+
 .bg-fixed {
   background-attachment: fixed;
 }
@@ -1876,6 +1892,10 @@ video {
 .bg-clip-text {
   -webkit-background-clip: text;
           background-clip: text;
+}
+
+.bg-center {
+  background-position: center;
 }
 
 .bg-repeat {

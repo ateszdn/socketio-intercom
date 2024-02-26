@@ -22,7 +22,8 @@ const io = socketio(expressServer, {
 const data = "";
 
 //app.use(express.static(__dirname + '/public'))
-app.use(express.static("public"));
+//app.use(express.static("static"));
+app.use('/static', express.static('static'))
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
@@ -50,5 +51,10 @@ io.on("connection", (socket) => {
   socket.on("clientMessage", (msg) => {
     console.log("MESSAGE:", msg);
     io.emit("messageBack", msg);
+  });
+  socket.on("clientReset", () => {
+    console.log("RESET");
+    io.emit("camBack", "reset");
+    io.emit("messageBack", "reset");
   });
 });
