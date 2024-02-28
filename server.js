@@ -34,7 +34,7 @@ app.get("/admin", (req, res) => {
   res.render("admin", {
     title: "Admin",
     message: "Dashboard",
-    classname: data,
+    //classname: data,
   });
 });
 
