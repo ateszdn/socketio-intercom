@@ -24,12 +24,20 @@ body.flex.flex-col.gap-12.justify-center.p-12.bg-zinc-900.text-center.border-8.b
   
   div.flex.flex-col.gap-12.justify-center
     
-    a#focus.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus
+    a#ok.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') OK
     
-    a#total.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Totál
+    a#zoom-in.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom IN
     
-    a#kozeli.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Közeli
+    a#zoom-out.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom OUT
+
+    a#brightness-up.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness UP
+
+    a#brightness-down.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness DOWN
       
+    a#focus-ok.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OK
+
+    a#focus-off.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OFF
+
   script(src='/socket.io/socket.io.js')
   script
     include ../static/script.js
