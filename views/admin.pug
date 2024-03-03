@@ -13,30 +13,30 @@ body.flex.flex-col.gap-12.justify-center.p-12.bg-zinc-900.text-center.border-8.b
   #message-display.flex.justify-center.items-center.p-32.text-zinc-700.font-bold.text-9xl.bg-zinc-800.uppercase.bg-no-repeat(class="aspect-[5/3]") MSG
 
   div.flex.flex-col.gap-12.justify-center
-  a#reset.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') RESET
+  a#reset.p-12.bg-rose-950.text.zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') RESET
   
-  div.flex.flex-col.gap-12.justify-center
-    a#cam-1.p-12.bg-zinc-600.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-1
+  div.grid.grid-cols-3.gap-12.justify-center
+    a#cam-1.flex.items-center.p-12.bg-zinc-600.text-5xl.font-bold.aspect-square(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-1
     
-    a#cam-2.p-12.bg-zinc-600.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-2
+    a#cam-2.flex.items-center.p-12.bg-zinc-600.text-5xl.font-bold.aspect-square(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-2
     
-    a#cam-3.p-12.bg-zinc-600.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-3
+    a#cam-3.flex.items-center.p-12.bg-zinc-600.text-5xl.font-bold.aspect-square(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-3
   
-  div.flex.flex-col.gap-12.justify-center
+  div.grid.grid-cols-2.gap-12.justify-center
     
-    a#ok.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') OK
+    a#ok.col-span-2.p-12.bg-emerald-900.text-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') OK
     
-    a#zoom-in.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom IN
+    a#zoom-in.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom IN
     
-    a#zoom-out.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom OUT
+    a#zoom-out.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom OUT
 
-    a#brightness-up.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness UP
+    a#brightness-up.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness UP
 
-    a#brightness-down.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness DOWN
+    a#brightness-down.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness DOWN
       
-    a#focus-ok.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OK
+    a#focus-ok.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OK
 
-    a#focus-off.p-12.bg-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OFF
+    a#focus-off.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OFF
 
   script(src='/socket.io/socket.io.js')
   script
