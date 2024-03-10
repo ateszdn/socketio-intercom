@@ -2,8 +2,43 @@ const PORT = process.env.PORT || 3000;
 
 const cors = require("cors");
 const express = require("express");
+
+const fs = require("fs");
 const path = require("path");
+
+const printMyDate = require("./utils/utils");
+const localNetwork = require("./utils/localNetwork");
+
 const socketio = require("socket.io");
+
+const QRCode = require('qrcode')
+
+
+// Get the clientAddress
+const serverIP = localNetwork[0];
+const clientAddress = `http://${serverIP}:${PORT}/`;
+
+// Read the index_template.html file
+fs.readFile(path.join(__dirname, 'public', 'index_template.html'), 'utf8', (err, data) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+
+  // Replace a placeholder in the file with the clientAddress
+  let result = data.replace(/__CLIENT_ADDRESS__/g, clientAddress);
+
+  // Write the result to index.html
+  fs.writeFile(path.join(__dirname, 'public', 'index.html'), result, 'utf8', (err) => {
+    if (err) {
+      console.error(err);
+    }
+  });
+});
+
+
+fs.appendFileSync("log.txt", `${printMyDate()}\nServer running at http://${serverIP}:${PORT}/\n\n`)
+// Create an Express application
 
 const app = express();
 // Use CORS middleware to allow all cross-origin requests
@@ -11,6 +46,8 @@ app.use(cors());
 //const expressServer = app.listen(3000)
 const expressServer = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log("Local network IPs:", localNetwork);
+  fs.appendFileSync("log.txt", `${printMyDate()}\nServer running on port ${PORT}\nLocal network IPs: ${localNetwork}\n\n`)
 });
 const io = socketio(expressServer, {
   cors: {
@@ -23,7 +60,8 @@ const data = "";
 
 //app.use(express.static(__dirname + '/public'))
 //app.use(express.static("static"));
-app.use('/static', express.static('static'))
+app.use('/static', express.static('static'));
+app.use('/json', express.static('json'));
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
@@ -34,14 +72,35 @@ app.get("/admin", (req, res) => {
   res.render("admin", {
     title: "Admin",
     message: "Dashboard",
-    //classname: data,
+    camBtns: camBtns,
+    messageBtns: messageBtns
   });
 });
+
+// write the QR code to a file
+//QRCode.toFile(path.join(__dirname, 'static', 'qrcode.svg'), clientAddress, {
+QRCode.toFile('./static/qr/qrcode.svg', clientAddress, {
+  type: 'svg',
+  color: {
+    dark: '#232325',  // dark gray dots
+    light: '#0000' // Transparent background
+  }
+}, function (err) {
+  if (err) throw err
+  console.log('saved qr code to qrcode.svg')
+})
+
+
+const btnData = require('./json/btnData.json');
+const printDate = require('./utils/utils');
+let camBtns = btnData.camBtns;
+let messageBtns = btnData.messageBtns;
 
 io.on("connection", (socket) => {
   console.log(socket.id, "has connected");
   socket.broadcast.emit("message", `${socket.id} HAS CONNECTED`);
   socket.on("hi", () => {
+    fs.appendFileSync("log.txt", `${printMyDate()}\n${socket.id} HAS CONNECTED\n\n`)
     console.log("##### HI #####");
   });
   socket.on("clientCam", (cam) => {
@@ -50,6 +109,7 @@ io.on("connection", (socket) => {
   });
   socket.on("clientMessage", (msg) => {
     console.log("MESSAGE:", msg);
+    fs.appendFileSync("log.txt", `Message: ${msg}\n`)
     io.emit("messageBack", msg);
   });
   socket.on("clientReset", () => {

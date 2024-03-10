@@ -1,43 +1,52 @@
 html
 head
   title= title
-  style
-    include ../static/output.css
-body.flex.flex-col.gap-12.justify-center.p-12.bg-zinc-900.text-center.border-8.border-zinc-800.text-6xl
-  h1.p-8.flex.justify-center.font-bold.text-zinc-600
-    span.hidden= message
-    img(src="/static/images/intercom-logo.svg")
+  meta(charset="utf-8")
+  meta(name="viewport" content="width=device-width, initial-scale=1")
+  link(rel="stylesheet", href="/static/output.css")
+body
+  div.content.grid.gap-6.p-6.bg-zinc-900.text-center.border-2.border-zinc-800.text-2xl
+    h1.p-6.flex.justify-center.font-bold.text-zinc-600
+      span.hidden= message
+      img.max-w-64(src="/static/images/intercom-logo.svg")
+    
+    div.grid.gap-6.grid-cols-1(class="md:grid-cols-2")
+      div.dsp-wrapper
+        div.dsp-container.flex.flex-col.gap-6.sticky.top-6
+          #cam-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") CAM #
+          #message-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-no-repeat.rounded-lg(class="aspect-[5/3]") MSG
   
-  #cam-display.flex.justify-center.items-center.p-32.text-zinc-700.font-bold.text-9xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat(class="aspect-[5/3]") CAM #
-  
-  #message-display.flex.justify-center.items-center.p-32.text-zinc-700.font-bold.text-9xl.bg-zinc-800.uppercase.bg-no-repeat(class="aspect-[5/3]") MSG
+      div.btn-container.grid.gap-6
+        a#reset.p-6.bg-rose-950.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') RESET
+        
+        div.grid.grid-cols-3.gap-6.justify-center
+          a#cam-1.flex.items-center.justify-center.bg-zinc-600.text-xl.font-bold.rounded-lg(class="aspect-[10/8] bg-[url('/static/images/cam1.svg')] bg-cover bg-left bg-no-repeat text-transparent" href='javascript:void(0)') CAM-1
+          a#cam-2.flex.items-center.justify-center.bg-zinc-600.text-xl.font-bold.rounded-lg(class="aspect-[10/8] bg-[url('/static/images/cam2.svg')] bg-cover bg-left bg-no-repeat text-transparent" href='javascript:void(0)') CAM-2
+          a#cam-3.flex.items-center.justify-center.bg-zinc-600.text-xl.font-bold.rounded-lg(class="aspect-[10/8] bg-[url('/static/images/cam3.svg')] bg-cover bg-left bg-no-repeat text-transparent" href='javascript:void(0)') CAM-3
+        
+        div.grid.grid-cols-2.gap-6.justify-center
+        
+          // a#ok.col-span-2.p-6.bg-lime-950.text-zinc-500.text-3xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') OK
+          // a#zoom-in.p-6.bg-zinc-500.text-xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom IN
+          // a#zoom-out.p-6.bg-zinc-500.text-xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom OUT
+          // a#brightness-up.p-6.bg-zinc-500.text-xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness UP
+          // a#brightness-down.p-6.bg-zinc-500.text-xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness DOWN
+          // a#focus-ok.p-6.bg-zinc-500.text-xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OK
+          // a#focus-off.p-6.bg-zinc-500.text-xl.font-bold.rounded-lg(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OFF
 
-  div.flex.flex-col.gap-12.justify-center
-  a#reset.p-12.bg-rose-950.text.zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') RESET
-  
-  div.grid.grid-cols-3.gap-12.justify-center
-    a#cam-1.flex.items-center.p-12.bg-zinc-600.text-5xl.font-bold.aspect-square(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-1
-    
-    a#cam-2.flex.items-center.p-12.bg-zinc-600.text-5xl.font-bold.aspect-square(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-2
-    
-    a#cam-3.flex.items-center.p-12.bg-zinc-600.text-5xl.font-bold.aspect-square(class="hover:bg-zinc-400" href='javascript:void(0)') CAM-3
-  
-  div.grid.grid-cols-2.gap-12.justify-center
-    
-    a#ok.col-span-2.p-12.bg-emerald-900.text-zinc-500.text-7xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') OK
-    
-    a#zoom-in.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom IN
-    
-    a#zoom-out.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Zoom OUT
-
-    a#brightness-up.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness UP
-
-    a#brightness-down.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Brightness DOWN
+          // each value, key in camBtns
+            // button(href=value)= key
       
-    a#focus-ok.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OK
-
-    a#focus-off.p-12.bg-zinc-500.text-5xl.font-bold(class="hover:bg-zinc-400" href='javascript:void(0)') Focus OFF
+          each value, key in messageBtns
+            //button(href=value)= key
+            if (key == 'ok')
+              a#ok.col-span-2.p-6.bg-lime-950.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') OK
+            else
+              a(id=key).p-6.text-xl.font-bold.rounded-lg(class="aspect-[5/3] bg-cover bg-center bg-no-repeat text-transparent" style=`background-image: ${value}` href='javascript:void(0)')=key
+          
+          //button.qr QR code
+          img.qr.col-start-2(src="/static/qr/qrcode.svg")
 
   script(src='/socket.io/socket.io.js')
-  script
-    include ../static/script.js
+  script(src='/static/script.js')
+  

@@ -1,19 +1,23 @@
 html
-  head
-    title= title
-    style
-      include ../static/output.css
-  body.flex.flex-col.gap-12.justify-center.p-12.bg-zinc-900.text-center.border-8.border-zinc-800.text-6xl
-    h1.p-8.flex.justify-center.font-bold.text-zinc-600
-      span.hidden= message
-      img(src="/static/images/intercom-logo.svg")
-    
-    iframe(src="http://192.168.8.101:3777/tally").w-full.h-72
-    
-    #cam-display.flex.justify-center.items-center.p-32.text-zinc-700.font-bold.text-9xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat(class="aspect-[5/3]") CAM #
-    
-    #message-display.flex.justify-center.items-center.p-32.text-zinc-700.font-bold.text-9xl.bg-zinc-800.uppercase.bg-no-repeat(class="aspect-[5/3]") MSG
-            
-    script(src='/socket.io/socket.io.js')
-    script
-      include ../static/script.js
+      head
+        title= title
+        meta(charset="utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1")
+        link(rel="stylesheet", href="/static/output.css")
+      body
+        div.content.grid.gap-6.p-6.h-fit.bg-zinc-900.text-center.border-2.border-zinc-800.text-2xl
+          h1.p-6.flex.justify-center.font-bold.text-zinc-600
+            span.hidden= message
+            img.max-w-64(src="/static/images/intercom-logo.svg")
+          
+          iframe(src="http://192.168.8.101:3777/tally").w-full.h-48.bg-zinc-800.rounded-lg
+          
+          div.grid.gap-6.grid-cols-1(class="md:grid-cols-2")
+            div.dsp-wrapper
+              div.dsp-container.flex.flex-col.gap-6.sticky.top-0
+                #cam-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") CAM #
+                #message-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-no-repeat.rounded-lg(class="aspect-[5/3]") MSG
+        
+        script(src='/socket.io/socket.io.js')
+        script(src='/static/script.js')
+        

@@ -14,12 +14,42 @@ socket.on("message", (arg) => {
 let newBackground = "";
 let camText = "";
 let msgText = "";
-camBackground = {
+
+let camBtns;
+let messageBtns;
+
+fetch('./json/btnData.json')
+  .then(response => {
+    console.log(response);
+    return response.json();
+  })
+  .then(data => {
+    camBtns = data.camBtns;
+    console.log(`camBtns: ${camBtns}`);
+    messageBtns = data.messageBtns;
+
+    // Add event listeners after fetch is complete
+    if (typeof messageBtns === 'object' && messageBtns !== null) {
+      Object.keys(messageBtns).forEach((key) => {
+        let button = document.querySelector(`#${key}`);
+        if (button) {
+          button.addEventListener("click", (event) => {
+            socket.emit("clientMessage", event.target.id);
+          });
+        }
+      });
+    } else {
+      console.error('messageBtns is not defined or not an object');
+    }
+  })
+  .catch((error) => console.error('Error:', error));
+/*
+camBtns = {
   "cam-1": "url('/static/images/cam1.svg')",
   "cam-2": "url('/static/images/cam2.svg')",
   "cam-3": "url('/static/images/cam3.svg')",
 };
-messageBackground = {
+messageBtns = {
   "ok": "url('/static/images/msg-OK.svg')",
   "zoom-in": "url('/static/images/msg-Zoom-IN.svg')",
   "zoom-out": "url('/static/images/msg-Zoom-OUT.svg')",
@@ -28,10 +58,9 @@ messageBackground = {
   "focus-ok": "url('/static/images/msg-Focus-OK.svg')",
   "focus-off": "url('/static/images/msg-Focus-OFF.svg')",
 };
-
-// write a new event listener for the "camBack" event that changes the background image of the #cam-display div to the image that is stored in a local object whose key is the value of the "cam" event
+*/
 socket.on("camBack", (backdata) => {
-  newBackground = camBackground[backdata];
+  newBackground = camBtns[backdata];
   console.log(newBackground);
   if (backdata == "reset") {
     newBackground = "";
@@ -52,7 +81,7 @@ socket.on("messageBack", (backmsg) => {
 });
 */
 socket.on("messageBack", (backmsg) => {
-  newBackground = messageBackground[backmsg];
+  newBackground = messageBtns[backmsg];
   console.log(newBackground);
   if (backmsg == "reset") {
     newBackground = "";
@@ -78,11 +107,13 @@ document.querySelectorAll("#cam-1, #cam-2, #cam-3").forEach((button) => {
   });
 });
 
+/* 
 document.querySelectorAll("#ok, #zoom-in, #zoom-out, #brightness-up, #brightness-down, #focus-ok, #focus-off").forEach((button) => {
   button.addEventListener("click", (event) => {
     socket.emit("clientMessage", event.target.id);
   });
 });
+ */
 
 document.querySelector("#reset").addEventListener("click", (event) => {
   socket.emit("clientReset");
