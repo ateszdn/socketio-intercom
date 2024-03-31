@@ -14,7 +14,9 @@ body
       div.dsp-wrapper
         div.dsp-container.flex.flex-col.gap-6.sticky.top-6
           #cam-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") CAM #
-          #message-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-no-repeat.rounded-lg(class="aspect-[5/3]") MSG
+          #message-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") MSG
+          canvas#canvas.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-no-repeat.rounded-lg(class="aspect-[5/3]")
+          a#save-canvas.p-6.bg-zinc-800.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') SEND IMG
   
       div.btn-container.grid.gap-6
         a#reset.p-6.bg-rose-950.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') RESET

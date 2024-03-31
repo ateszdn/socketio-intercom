@@ -13,6 +13,8 @@ const socketio = require("socket.io");
 
 const QRCode = require('qrcode')
 
+const bodyParser = require('body-parser');
+
 
 // Get the clientAddress
 const serverIP = localNetwork[0];
@@ -41,6 +43,9 @@ fs.appendFileSync("log.txt", `${printMyDate()}\nServer running at http://${serve
 // Create an Express application
 
 const app = express();
+
+app.use(bodyParser.json({ limit: '50mb' }));
+
 // Use CORS middleware to allow all cross-origin requests
 app.use(cors());
 //const expressServer = app.listen(3000)
@@ -76,14 +81,38 @@ app.get("/admin", (req, res) => {
     messageBtns: messageBtns
   });
 });
+// save the image from the canvas
+app.post('/save-image', (req, res) => {
+  let dataUrl = req.body.dataUrl;
+  let base64Data = dataUrl.replace(/^data:image\/webp;base64,/, "");
+
+  // Generate a unique filename using a timestamp
+  let timestamp = Date.now();
+  let filename = `canvas-content-${timestamp}.webp`;
+  let imagePath = path.join(__dirname, 'static', 'images', 'screenshot', filename);
+
+  fs.writeFile(imagePath, base64Data, 'base64', (err) => {
+    if (err) {
+      console.log(err);
+      res.status(500).send('Error saving image');
+    } else {
+      // Emit a socket.io event with the image path
+      io.emit('imageSaved', { imagePath: `/static/images/screenshot/${filename}` });
+      res.send('Image saved');
+    }
+  });
+});
+
+
 
 // write the QR code to a file
 //QRCode.toFile(path.join(__dirname, 'static', 'qrcode.svg'), clientAddress, {
 QRCode.toFile('./static/qr/qrcode.svg', clientAddress, {
   type: 'svg',
   color: {
-    dark: '#232325',  // dark gray dots
-    light: '#0000' // Transparent background
+    dark: '#000',  // dark gray dots
+    light: '#fff' // white bg
+    //light: '#0000' // Transparent background
   }
 }, function (err) {
   if (err) throw err
