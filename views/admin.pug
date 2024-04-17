@@ -1,8 +1,9 @@
+<!doctype html>
 html
 head
   title= title
   meta(charset="utf-8")
-  meta(name="viewport" content="width=device-width, initial-scale=1")
+  meta(name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1")
   link(rel="stylesheet", href="/static/output.css")
 body
   div.content.grid.gap-6.p-6.bg-zinc-900.text-center.border-2.border-zinc-800.text-2xl
@@ -15,8 +16,13 @@ body
         div.dsp-container.flex.flex-col.gap-6.sticky.top-6
           #cam-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") CAM #
           #message-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") MSG
-          canvas#canvas.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-no-repeat.rounded-lg(class="aspect-[5/3]")
-          a#save-canvas.p-6.bg-zinc-800.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') SEND IMG
+          dialog(class="fixed top-0 right-0 bottom-0 left-0 rounded-lg bg-[#fff5]")
+            div.flex.flex-col.gap-6.p-12
+              canvas#canvas.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-no-repeat.rounded-lg(class="aspect-[5/3]  max-h-[40vw]")
+              div.flex.gap-6
+                a#close-dialog.p-6.grow.bg-zinc-800.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)' autofocus) CANCEL
+                a#save-canvas.p-6.grow.bg-zinc-800.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') SEND IMG
+          a#open-dialog.p-6.bg-zinc-800.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') OPEN IMG
   
       div.btn-container.grid.gap-6
         a#reset.p-6.bg-rose-950.text-zinc-500.text-3xl.font-bold.rounded-lg(href='javascript:void(0)') RESET

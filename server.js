@@ -86,6 +86,21 @@ app.post('/save-image', (req, res) => {
   let dataUrl = req.body.dataUrl;
   let base64Data = dataUrl.replace(/^data:image\/webp;base64,/, "");
 
+  // Delete all files in the screenshot directory
+  fs.readdir(path.join(__dirname, 'static', 'images', 'screenshot'), (err, files) => {
+    if (err) {
+      console.log(err);
+    } else {
+      for (const file of files) {
+        fs.unlink(path.join(__dirname, 'static', 'images', 'screenshot', file), (err) => {
+          if (err) {
+            console.log(err);
+          }
+        });
+      }
+    }
+  });
+  
   // Generate a unique filename using a timestamp
   let timestamp = Date.now();
   let filename = `canvas-content-${timestamp}.webp`;

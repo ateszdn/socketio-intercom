@@ -97,6 +97,7 @@ socket.on("messageBack", (backmsg) => {
 socket.on('imageSaved', function(data) {
   console.log('Image saved:', data.imagePath);
   document.querySelector("#message-display").style.backgroundImage = `url(${data.imagePath})`;
+  document.querySelector("#message-display").innerHTML = "";
 });
 
 /*
@@ -126,6 +127,16 @@ document.querySelector("#reset").addEventListener("click", (event) => {
 });
 
 
+const dialog = document.querySelector('dialog');
+const openDialogButton = document.querySelector('#open-dialog');
+const closeDialogButton = document.querySelector('#close-dialog');
+openDialogButton.addEventListener('click', () => {
+    dialog.showModal();
+});
+closeDialogButton.addEventListener('click', () => {
+    dialog.close();
+});
+
 // save the image from the canvas
 let saveCanvasButton = document.getElementById('save-canvas');
 
@@ -141,6 +152,7 @@ saveCanvasButton.addEventListener('click', function() {
     })
     .then(response => response.text())
     .then(data => console.log(data))
+    .then(() => { dialog.close(); })
     .catch((error) => {
         console.error('Error:', error);
     });

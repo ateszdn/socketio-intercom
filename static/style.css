@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+dialog {
+	&::backdrop {
+		background-color: #000e;
+	}
+}

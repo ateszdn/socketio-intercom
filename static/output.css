@@ -649,8 +649,20 @@ video {
   inset: -0.25rem;
 }
 
+.bottom-0 {
+  bottom: 0px;
+}
+
 .end-1 {
   inset-inline-end: 0.25rem;
+}
+
+.left-0 {
+  left: 0px;
+}
+
+.right-0 {
+  right: 0px;
 }
 
 .top-0 {
@@ -847,6 +859,10 @@ video {
 .h-fit {
   height: -moz-fit-content;
   height: fit-content;
+}
+
+.max-h-\[40vw\] {
+  max-height: 40vw;
 }
 
 .w-\[this-is\\\\\] {
@@ -1864,6 +1880,10 @@ video {
   border-color: rgb(39 39 42 / var(--tw-border-opacity));
 }
 
+.bg-\[\#000b\] {
+  background-color: #000b;
+}
+
 .bg-\[rgb\(255\2c 0\2c 0\)\] {
   --tw-bg-opacity: 1;
   background-color: rgb(255 0 0 / var(--tw-bg-opacity));
@@ -1902,6 +1922,18 @@ video {
 .bg-zinc-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(24 24 27 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#fffb\] {
+  background-color: #fffb;
+}
+
+.bg-\[\#fff8\] {
+  background-color: #fff8;
+}
+
+.bg-\[\#fff5\] {
+  background-color: #fff5;
 }
 
 .bg-\[url\(\'\/static\/images\/cam1\.svg\'\)\] {
@@ -2570,6 +2602,12 @@ video {
   forced-color-adjust: none;
 }
 
+dialog {
+  &::backdrop {
+    background-color: #000e;
+  }
+}
+
 @media (min-width: 640px) {
   .sm\:container {
     width: 100%;
@@ -2631,16 +2669,6 @@ video {
 
 .hover\:focus\:text-center:focus:hover {
   text-align: center;
-}
-
-.active\:bg-rose-900:active {
-  --tw-bg-opacity: 1;
-  background-color: rgb(136 19 55 / var(--tw-bg-opacity));
-}
-
-.active\:bg-lime-900:active {
-  --tw-bg-opacity: 1;
-  background-color: rgb(54 83 20 / var(--tw-bg-opacity));
 }
 
 @media (min-width: 640px) {
