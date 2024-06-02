@@ -3,8 +3,26 @@
 @tailwind utilities;
 
 
+:root {
+	--color-red: #FB0018;
+	--color-green: #53C43D;
+	--color-icon: #fdf951;
+}
+
+
 dialog {
 	&::backdrop {
 		background-color: #000e;
 	}
 }
+
+#onAir {
+}
+#onAir.streaming {
+	color: var(--color-red);
+}
+
+#onAir-frame.streaming {
+	border-color: var(--color-red);
+}
+

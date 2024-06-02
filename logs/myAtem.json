@@ -1,0 +1,163 @@
+<ref *1> Atem {
+  _events: Events <[Object: null prototype] {}> {
+    info: EE { fn: [Function: log], context: [Circular *1], once: false },
+    error: EE { fn: [Function: error], context: [Circular *1], once: false },
+    connected: EE {
+      fn: [Function (anonymous)],
+      context: [Circular *1],
+      once: false
+    },
+    stateChanged: EE {
+      fn: [Function (anonymous)],
+      context: [Circular *1],
+      once: false
+    }
+  },
+  _eventsCount: 4,
+  _sentQueue: {},
+  _state: {
+    info: {
+      apiVersion: 131102,
+      model: 14,
+      superSources: [],
+      mixEffects: [Array],
+      power: [Array],
+      productIdentifier: 'ATEM Mini Pro',
+      capabilities: [Object],
+      multiviewer: [Object],
+      mediaPool: [Object],
+      fairlightMixer: [Object],
+      supportedVideoModes: [Array],
+      macroPool: [Object]
+    },
+    video: {
+      mixEffects: [Array],
+      downstreamKeyers: [Array],
+      auxilliaries: [Array],
+      superSources: []
+    },
+    media: { stillPool: [Array], clipPool: [], players: [Array] },
+    inputs: {
+      '0': [Object],
+      '1': [Object],
+      '2': [Object],
+      '3': [Object],
+      '4': [Object],
+      '1000': [Object],
+      '2001': [Object],
+      '2002': [Object],
+      '3010': [Object],
+      '3011': [Object],
+      '8001': [Object],
+      '9001': [Object],
+      '9101': [Object],
+      '9102': [Object],
+      '9103': [Object],
+      '10010': [Object],
+      '10011': [Object],
+      '11001': [Object]
+    },
+    macro: {
+      macroPlayer: [Object],
+      macroRecorder: [Object],
+      macroProperties: [Array]
+    },
+    settings: { multiViewers: [Array], videoMode: 10, mediaPool: undefined },
+    fairlight: {
+      inputs: [Object],
+      audioFollowVideoCrossfadeTransitionEnabled: false,
+      master: [Object]
+    },
+    colorGenerators: { '0': [Object], '1': [Object] },
+    recording: {
+      properties: [Object],
+      disks: {},
+      status: [Object],
+      duration: [Object]
+    },
+    streaming: {
+      service: [Object],
+      audioBitrates: [Object],
+      status: [Object],
+      duration: [Object],
+      stats: [Object]
+    }
+  },
+  _status: 2,
+  socket: AtemSocket {
+    _events: Events <[Object: null prototype] {}> {
+      receivedCommands: [EE],
+      ackPackets: [EE],
+      info: [EE],
+      debug: [EE],
+      error: [EE],
+      disconnect: [EE]
+    },
+    _eventsCount: 6,
+    _commandParser: CommandParser { commands: [Object], version: 131102 },
+    _nextPacketTrackingId: 0,
+    _isDisconnecting: false,
+    _port: 9910,
+    _address: '192.168.0.118',
+    _debugBuffers: false,
+    _disableMultithreaded: false,
+    _childProcessTimeout: 600,
+    _maxPacketSize: 1416,
+    _creatingSocket: Promise { undefined },
+    _socketProcess: {
+      _connectionState: [Getter/Setter],
+      _nextSendPacketId: [Getter/Setter],
+      _sessionId: [Getter/Setter],
+      _lastReceivedAt: [Getter/Setter],
+      _lastReceivedPacketId: [Getter/Setter],
+      _inFlight: [Getter/Setter],
+      _ackTimer: [Getter/Setter],
+      _ackTimerRunning: [Getter/Setter],
+      _receivedWithoutAck: [Getter/Setter],
+      _debugBuffers: [Getter/Setter],
+      _address: [Getter/Setter],
+      _port: [Getter/Setter],
+      onDisconnect: [Function: callMethod],
+      onLog: [Function: callMethod],
+      onCommandsReceived: [Function: callMethod],
+      onPacketsAcknowledged: [Function: callMethod],
+      _socket: [Getter/Setter],
+      startTimers: [Function: callMethod],
+      connect: [Function: callMethod],
+      disconnect: [Function: callMethod],
+      _clearTimers: [Function: callMethod],
+      restartConnection: [Function: callMethod],
+      log: [Function: callMethod],
+      sendPackets: [Function: callMethod],
+      sendPacket: [Function: callMethod],
+      _recreateSocket: [Function: callMethod],
+      _closeSocket: [Function: callMethod],
+      _createSocket: [Function: callMethod],
+      _isPacketCoveredByAck: [Function: callMethod],
+      _receivePacket: [Function: callMethod],
+      _sendPacket: [Function: callMethod],
+      _sendOrQueueAck: [Function: callMethod],
+      _sendAck: [Function: callMethod],
+      _retransmitFrom: [Function: callMethod],
+      _checkForRetransmit: [Function: callMethod]
+    },
+    _exitUnsubscribe: [Function (anonymous)]
+  },
+  dataTransferManager: DataTransferManager {
+    interval: Timeout {
+      _idleTimeout: 2,
+      _idlePrev: [TimersList],
+      _idleNext: [TimersList],
+      _idleStart: 6385,
+      _onTimeout: [Function (anonymous)],
+      _timerArgs: undefined,
+      _repeat: 2,
+      _destroyed: false,
+      [Symbol(refed)]: true,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 42,
+      [Symbol(triggerId)]: 15
+    },
+    exitUnsubscribe: [Function (anonymous)]
+  }
+}

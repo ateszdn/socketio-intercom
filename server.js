@@ -8,6 +8,7 @@ const path = require("path");
 
 const printMyDate = require("./utils/utils");
 const localNetwork = require("./utils/localNetwork");
+const myAtem = require("./utils/atem");
 
 const socketio = require("socket.io");
 
@@ -162,3 +163,23 @@ io.on("connection", (socket) => {
     io.emit("messageBack", "reset");
   });
 });
+
+
+// ATEM Mini streaming status
+myAtem.on('stateChanged', (state, pathToChange) => {
+  console.log('State changed:', pathToChange);
+  //console.log('State:', state);
+  //console.log(`previewInput: ${state.video.mixEffects[0].previewInput}`);
+  //console.log(`programInput: ${state.video.mixEffects[0].programInput}`);
+  if (pathToChange.includes('streaming.status')) {
+    console.log(`Streaming state: ${state.streaming.status.state}`);
+    io.emit("streamingStatusChanged", { streamingStatus: state.streaming.status.state });
+    //io.emit("streamingStatusChanged", "STREAMING");
+  }
+  if (pathToChange.includes('video.mixEffects.0.previewInput') || pathToChange.includes('video.mixEffects.0.programInput')) {
+    console.log(`Preview input: ${state.video.mixEffects[0].previewInput}`);
+    console.log(`Program input: ${state.video.mixEffects[0].programInput}`);
+    io.emit("InputChanged", { changedInputs: { previewInput: state.video.mixEffects[0].previewInput, programInput: state.video.mixEffects[0].programInput } });
+  }
+});
+

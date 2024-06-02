@@ -122,49 +122,93 @@ document.querySelectorAll("#ok, #zoom-in, #zoom-out, #brightness-up, #brightness
 });
  */
 
-document.querySelector("#reset").addEventListener("click", (event) => {
-  socket.emit("clientReset");
+let resetButton = document.querySelector("#reset");
+if (resetButton) {
+    resetButton.addEventListener("click", (event) => {
+        socket.emit("clientReset");
+    });
+}
+
+
+// ATEM Mini Streaming status
+socket.on("streamingStatusChanged", (data) => {
+  console.log('Streaming status:', data.streamingStatus);
+  const onAirElement = document.getElementById('onAir');
+  const onAirFrameElement = document.getElementById('onAir-frame');
+  if (data.streamingStatus == 4) {
+    //console.log('Streaming');
+    onAirElement.classList.add('streaming');
+    onAirFrameElement.classList.add('streaming');
+  } else {
+    onAirElement.classList.remove('streaming');
+    onAirFrameElement.classList.remove('streaming');
+  }
 });
+// ATEM Mini tally status
+socket.on("InputChanged", (data) => {
+  console.log('Preview input:', data.changedInputs.previewInput);
+  console.log('Program input:', data.changedInputs.programInput);
+  //console.log(data);
+
+  // Reset all divs to gray
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`input-${i}`).style.backgroundColor = 'rgb(39, 39, 42)';
+  }
+
+  // Set the preview input div to green
+  document.getElementById(`input-${data.changedInputs.previewInput}`).style.backgroundColor = 'var(--color-green)';
+
+  // Set the program input div to red
+  document.getElementById(`input-${data.changedInputs.programInput}`).style.backgroundColor = 'var(--color-red)';
+});
+
+
 
 
 const dialog = document.querySelector('dialog');
 const openDialogButton = document.querySelector('#open-dialog');
 const closeDialogButton = document.querySelector('#close-dialog');
-openDialogButton.addEventListener('click', () => {
-    dialog.showModal();
-});
-closeDialogButton.addEventListener('click', () => {
-    dialog.close();
-});
-
+if (openDialogButton) {
+  openDialogButton.addEventListener('click', () => {
+      dialog.showModal();
+  });
+}
+if (closeDialogButton) {
+  closeDialogButton.addEventListener('click', () => {
+      dialog.close();
+  });
+}
 // save the image from the canvas
 let saveCanvasButton = document.getElementById('save-canvas');
+if (saveCanvasButton) {
+  saveCanvasButton.addEventListener('click', function() {
+      let dataUrl = canvas.toDataURL('image/webp');
 
-saveCanvasButton.addEventListener('click', function() {
-    let dataUrl = canvas.toDataURL('image/webp');
-
-    fetch('/save-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ dataUrl: dataUrl })
-    })
-    .then(response => response.text())
-    .then(data => console.log(data))
-    .then(() => { dialog.close(); })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
-});
-
+      fetch('/save-image', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ dataUrl: dataUrl })
+      })
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .then(() => { dialog.close(); })
+      .catch((error) => {
+          console.error('Error:', error);
+      });
+  });
+}
 
 
 
 
 // Canvas pam amd zoom from https://codepen.io/chengarda/pen/wRxoyB
-let canvas = document.getElementById("canvas")
-let ctx = canvas.getContext('2d')
+let canvas = document.getElementById("canvas");
+let ctx;
+if (canvas) {
+  ctx = canvas.getContext('2d');
+}
 
 let cameraOffset = { x: window.innerWidth/2, y: window.innerHeight/2 }
 let cameraZoom = 1
@@ -302,15 +346,16 @@ function adjustZoom(zoomAmount, zoomFactor)
     }
 }
 
-canvas.addEventListener('mousedown', onPointerDown)
-canvas.addEventListener('touchstart', (e) => handleTouch(e, onPointerDown))
-canvas.addEventListener('mouseup', onPointerUp)
-canvas.addEventListener('touchend',  (e) => handleTouch(e, onPointerUp))
-canvas.addEventListener('mousemove', onPointerMove)
-canvas.addEventListener('touchmove', (e) => handleTouch(e, onPointerMove))
-canvas.addEventListener( 'wheel', (e) => adjustZoom(e.deltaY*SCROLL_SENSITIVITY))
+if (canvas) {
+  canvas.addEventListener('mousedown', onPointerDown)
+  canvas.addEventListener('touchstart', (e) => handleTouch(e, onPointerDown))
+  canvas.addEventListener('mouseup', onPointerUp)
+  canvas.addEventListener('touchend',  (e) => handleTouch(e, onPointerUp))
+  canvas.addEventListener('mousemove', onPointerMove)
+  canvas.addEventListener('touchmove', (e) => handleTouch(e, onPointerMove))
+  canvas.addEventListener( 'wheel', (e) => adjustZoom(e.deltaY*SCROLL_SENSITIVITY))
 
-// Ready, set, go
-draw()
-
+  // Ready, set, go
+  draw()
+}
 

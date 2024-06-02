@@ -4,15 +4,24 @@ html
         meta(charset="utf-8")
         meta(name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1")
         link(rel="stylesheet", href="/static/output.css")
-      body
-        div.content.grid.gap-6.p-6.h-fit.bg-zinc-900.text-center.border-2.border-zinc-800.text-2xl
-          h1.p-6.flex.justify-center.font-bold.text-zinc-600
-            span.hidden= message
-            img.max-w-64(src="/static/images/intercom-logo.svg")
+      body.bg-zinc-900
+        div#onAir-frame.content.grid.gap-6.content-start.p-6.h-full.bg-zinc-900.text-center.border-2.border-zinc-800.text-2xl.rounded-2xl.overflow-x-hidden.overflow-y-auto
+          div.flex.justify-between
+            h1.flex.justify-center.font-bold.text-zinc-600
+              span.hidden= message
+              img.max-w-48(src="/static/images/intercom-logo.svg")
+            div#onAir.text-lg.text-zinc-700.uppercase ◉ On Air
           
-          iframe(src="http://192.168.8.101:3777/tally").w-full.h-48.bg-zinc-800.rounded-lg
+          // iframe(src="http://192.168.8.101:3777/tally").w-full.h-48.bg-zinc-800.rounded-lg
+          //iframe(src="http://192.168.0.116:3777/tally").w-full.h-48.bg-zinc-800.rounded-lg
           
           div.grid.gap-6.grid-cols-1(class="md:grid-cols-2")
+            div.grid.grid-cols-3.gap-6.justify-center
+              div#input-1.flex.items-center.justify-center.bg-zinc-800.text-xl.font-bold.rounded-lg(class="aspect-[10/8]" style="") CAM-1
+              div#input-2.flex.items-center.justify-center.bg-zinc-800.text-xl.font-bold.rounded-lg(class="aspect-[10/8]" style="") CAM-2
+              div#input-3.flex.items-center.justify-center.bg-zinc-800.text-xl.font-bold.rounded-lg(class="aspect-[10/8]" style="") CAM-3
+              div#input-4.flex.items-center.justify-center.bg-zinc-800.text-xl.font-bold.rounded-lg(class="aspect-[10/8]" style="display:none;") CAM-3
+              
             div.dsp-wrapper
               div.dsp-container.flex.flex-col.gap-6.sticky.top-0
                 #cam-display.flex.justify-center.items-center.text-zinc-700.font-bold.text-4xl.bg-zinc-800.uppercase.bg-cover.bg-center.bg-no-repeat.rounded-lg(class="aspect-[5/3]") CAM #

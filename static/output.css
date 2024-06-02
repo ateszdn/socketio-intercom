@@ -733,6 +733,10 @@ video {
   clear: none;
 }
 
+.m-1 {
+  margin: 0.25rem;
+}
+
 .mb-12 {
   margin-bottom: 3rem;
 }
@@ -852,13 +856,25 @@ video {
   aspect-ratio: 5/3;
 }
 
+.size-1 {
+  width: 0.25rem;
+  height: 0.25rem;
+}
+
+.h-1 {
+  height: 0.25rem;
+}
+
 .h-48 {
   height: 12rem;
 }
 
-.h-fit {
-  height: -moz-fit-content;
-  height: fit-content;
+.h-full {
+  height: 100%;
+}
+
+.h-\[100vh\] {
+  height: 100vh;
 }
 
 .max-h-\[40vw\] {
@@ -881,8 +897,8 @@ video {
   width: 100%;
 }
 
-.max-w-64 {
-  max-width: 16rem;
+.max-w-48 {
+  max-width: 12rem;
 }
 
 .flex-shrink {
@@ -1743,6 +1759,18 @@ video {
   border-radius: 0.5rem;
 }
 
+.rounded-2xl {
+  border-radius: 1rem;
+}
+
+.rounded-3xl {
+  border-radius: 1.5rem;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
 .rounded-b {
   border-bottom-right-radius: 0.25rem;
   border-bottom-left-radius: 0.25rem;
@@ -1880,8 +1908,8 @@ video {
   border-color: rgb(39 39 42 / var(--tw-border-opacity));
 }
 
-.bg-\[\#000b\] {
-  background-color: #000b;
+.bg-\[\#fff5\] {
+  background-color: #fff5;
 }
 
 .bg-\[rgb\(255\2c 0\2c 0\)\] {
@@ -1924,18 +1952,6 @@ video {
   background-color: rgb(24 24 27 / var(--tw-bg-opacity));
 }
 
-.bg-\[\#fffb\] {
-  background-color: #fffb;
-}
-
-.bg-\[\#fff8\] {
-  background-color: #fff8;
-}
-
-.bg-\[\#fff5\] {
-  background-color: #fff5;
-}
-
 .bg-\[url\(\'\/static\/images\/cam1\.svg\'\)\] {
   background-image: url('/static/images/cam1.svg');
 }
@@ -1946,6 +1962,10 @@ video {
 
 .bg-\[url\(\'\/static\/images\/cam3\.svg\'\)\] {
   background-image: url('/static/images/cam3.svg');
+}
+
+.bg-none {
+  background-image: none;
 }
 
 .decoration-slice {
@@ -2070,6 +2090,10 @@ video {
      object-fit: scale-down;
 }
 
+.p-1 {
+  padding: 0.25rem;
+}
+
 .p-12 {
   padding: 3rem;
 }
@@ -2170,6 +2194,11 @@ video {
 .text-9xl {
   font-size: 8rem;
   line-height: 1;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
 }
 
 .text-xl {
@@ -2602,10 +2631,27 @@ video {
   forced-color-adjust: none;
 }
 
+:root {
+  --color-red: #FB0018;
+  --color-green: #53C43D;
+  --color-icon: #fdf951;
+}
+
 dialog {
   &::backdrop {
     background-color: #000e;
   }
+}
+
+#onAir {
+}
+
+#onAir.streaming {
+  color: var(--color-red);
+}
+
+#onAir-frame.streaming {
+  border-color: var(--color-red);
 }
 
 @media (min-width: 640px) {
@@ -2690,3 +2736,4 @@ dialog {
     }
   }
 }
+
