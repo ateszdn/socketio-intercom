@@ -869,12 +869,12 @@ video {
   height: 12rem;
 }
 
-.h-full {
-  height: 100%;
-}
-
 .h-\[100vh\] {
   height: 100vh;
+}
+
+.h-full {
+  height: 100%;
 }
 
 .max-h-\[40vw\] {
@@ -1755,20 +1755,12 @@ video {
   border-radius: 0.25rem;
 }
 
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
 .rounded-2xl {
   border-radius: 1rem;
 }
 
-.rounded-3xl {
-  border-radius: 1.5rem;
-}
-
-.rounded-xl {
-  border-radius: 0.75rem;
+.rounded-lg {
+  border-radius: 0.5rem;
 }
 
 .rounded-b {

@@ -11,7 +11,8 @@ bonjour.find({ type: 'atem-mini' }, function (service) {
 console.log('ATEM Mini IP:', atemIp);
 
 const myAtem = new Atem()
-myAtem.connect('192.168.0.118') // replace with your ATEM IP address
+myAtem.connect('192.168.0.105') // replace with your ATEM IP address
+//myAtem.connect('192.168.8.100') // replace with your ATEM IP address
 
 myAtem.on('info', console.log)
 myAtem.on('error', console.error)

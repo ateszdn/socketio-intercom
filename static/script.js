@@ -164,6 +164,69 @@ socket.on("InputChanged", (data) => {
 
 
 
+// Fetch messages array from the server
+/* fetch("/api/messages")
+  .then(response => response.json())
+  .then(messages => {
+    console.log(messages); // Use 'messages' which contains 'messages'
+    // Loop through the messages array
+    messages.forEach((message) => {
+      // Check if the message contains the 'msg' key
+      if (message.msg) {
+        newBackground = messageBtns[message.msg];
+        document.querySelector("#message-display").style.backgroundImage = newBackground;
+      }
+    });
+  })
+  .catch(error => console.error("Error fetching messages:", error));
+ */
+socket.on("messages", (messages) => {
+  messages.forEach((message) => {
+    if (message.cam) {
+      console.log('Camera:', message.cam);
+      newBackground = camBtns[message.cam];
+      document.querySelector("#cam-display").style.backgroundImage = newBackground;
+      document.querySelector("#cam-display").innerHTML = "";
+    }
+    if (message.msg) {
+      console.log('Message:', message.msg);
+      newBackground = messageBtns[message.msg];
+      document.querySelector("#message-display").style.backgroundImage = newBackground;
+      document.querySelector("#message-display").innerHTML = "";
+    }
+    if (message.streamingStatus) {
+      console.log('Streaming status:', message.streamingStatus);
+      const onAirElement = document.getElementById('onAir');
+      const onAirFrameElement = document.getElementById('onAir-frame');
+      if (message.streamingStatus == 4) {
+        //console.log('Streaming');
+        onAirElement.classList.add('streaming');
+        onAirFrameElement.classList.add('streaming');
+      } else {
+        onAirElement.classList.remove('streaming');
+        onAirFrameElement.classList.remove('streaming');
+      }
+    }
+    if (message.previewInput && message.programInput) {
+      console.log('Preview input:', message.previewInput);
+      console.log('Program input:', message.programInput);
+
+      // Reset all divs to gray
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`input-${i}`).style.backgroundColor = 'rgb(39, 39, 42)';
+      }
+
+      // Set the preview input div to green
+      document.getElementById(`input-${message.previewInput}`).style.backgroundColor = 'var(--color-green)';
+
+      // Set the program input div to red
+      document.getElementById(`input-${message.programInput}`).style.backgroundColor = 'var(--color-red)';
+    }
+  });
+});
+
+
+
 
 const dialog = document.querySelector('dialog');
 const openDialogButton = document.querySelector('#open-dialog');

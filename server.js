@@ -63,6 +63,8 @@ const io = socketio(expressServer, {
 });
 
 const data = "";
+// Store messages in an array to send to new clients
+let messages = [];
 
 //app.use(express.static(__dirname + '/public'))
 //app.use(express.static("static"));
@@ -72,15 +74,19 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
 app.get("/", (req, res) => {
-  res.render("index", { title: "Intercom", message: "Intercom" });
+  res.render("index", { title: "Intercom", messages: messages });
 });
 app.get("/admin", (req, res) => {
   res.render("admin", {
     title: "Admin",
-    message: "Dashboard",
+    messages: messages,
     camBtns: camBtns,
     messageBtns: messageBtns
   });
+});
+// Get the messages from the server as JSON
+app.get("/api/messages", (req, res) => {
+  res.json(messages);
 });
 // save the image from the canvas
 app.post('/save-image', (req, res) => {
@@ -144,28 +150,56 @@ let messageBtns = btnData.messageBtns;
 io.on("connection", (socket) => {
   console.log(socket.id, "has connected");
   socket.broadcast.emit("message", `${socket.id} HAS CONNECTED`);
+  io.emit("messages", messages);
   socket.on("hi", () => {
     fs.appendFileSync("log.txt", `${printMyDate()}\n${socket.id} HAS CONNECTED\n\n`)
     console.log("##### HI #####");
   });
   socket.on("clientCam", (cam) => {
     console.log("CAM:", cam);
+    // Store the cam message for new clients
+    // Check if the cam message is already in the messages array
+    // If it is, update the cam message
+    // If it is not, add the cam message
+    let camIndex = messages.findIndex(item => item.cam);
+    if (camIndex !== -1) {
+      messages[camIndex].cam = cam;
+    } else {
+      messages.push({cam: cam});
+    }
+    console.log(messages);
     io.emit("camBack", cam);
   });
   socket.on("clientMessage", (msg) => {
     console.log("MESSAGE:", msg);
     fs.appendFileSync("log.txt", `Message: ${msg}\n`)
+    // Store the message for new clients
+    // Check if the message is already in the messages array
+    // If it is, update the message
+    // If it is not, add the message
+    let msgIndex = messages.findIndex(item => item.msg);
+    if (msgIndex !== -1) {
+      messages[msgIndex].msg = msg;
+    } else {
+      messages.push({msg: msg});
+    }
+    console.log(messages);
     io.emit("messageBack", msg);
   });
   socket.on("clientReset", () => {
     console.log("RESET");
+    // Reset the messages array
+    // remove object {cam: cam} and {msg: msg}
+    messages = messages.filter(item => !item.cam && !item.msg);
+    console.log(messages);
+    // Send a reset message to all clients
     io.emit("camBack", "reset");
     io.emit("messageBack", "reset");
   });
 });
 
 
-// ATEM Mini streaming status
+// ATEM Mini streaming status and input changes (Tally status)
 myAtem.on('stateChanged', (state, pathToChange) => {
   console.log('State changed:', pathToChange);
   //console.log('State:', state);
@@ -173,12 +207,37 @@ myAtem.on('stateChanged', (state, pathToChange) => {
   //console.log(`programInput: ${state.video.mixEffects[0].programInput}`);
   if (pathToChange.includes('streaming.status')) {
     console.log(`Streaming state: ${state.streaming.status.state}`);
+    // Store the message for new clients
+    // Check if the streaming status message is already in the messages array
+    // If it is, update the streaming status message
+    // If it is not, add the streaming status message
+    let streamingIndex = messages.findIndex(item => item.streamingStatus);
+    if (streamingIndex !== -1) {
+      messages[streamingIndex].streamingStatus = state.streaming.status.state;
+    } else {
+      messages.push({streamingStatus: state.streaming.status.state});
+    }
+    console.log(messages);
+    // Send the streaming status to all clients
     io.emit("streamingStatusChanged", { streamingStatus: state.streaming.status.state });
     //io.emit("streamingStatusChanged", "STREAMING");
   }
   if (pathToChange.includes('video.mixEffects.0.previewInput') || pathToChange.includes('video.mixEffects.0.programInput')) {
     console.log(`Preview input: ${state.video.mixEffects[0].previewInput}`);
     console.log(`Program input: ${state.video.mixEffects[0].programInput}`);
+    // Store the message for new clients
+    // Check if the input message is already in the messages array
+    // If it is, update the input message
+    // If it is not, add the input message
+    let inputIndex = messages.findIndex(item => item.previewInput && item.programInput);
+    if (inputIndex !== -1) {
+      messages[inputIndex].previewInput = state.video.mixEffects[0].previewInput;
+      messages[inputIndex].programInput = state.video.mixEffects[0].programInput;
+    } else {
+      messages.push({previewInput: state.video.mixEffects[0].previewInput, programInput: state.video.mixEffects[0].programInput});
+    }
+    console.log(messages);
+    // Send the preview and program inputs to all clients
     io.emit("InputChanged", { changedInputs: { previewInput: state.video.mixEffects[0].previewInput, programInput: state.video.mixEffects[0].programInput } });
   }
 });
