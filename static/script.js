@@ -4,7 +4,7 @@ const socket = io(window.location.origin);
 // console.log(socket)
 socket.on("connect", () => {
   console.log(socket.id);
-  socket.emit("hi");
+  //socket.emit("hi");
 });
 
 socket.on("message", (arg) => {
@@ -69,6 +69,7 @@ socket.on("camBack", (backdata) => {
     camText = "";
   }
   document.querySelector("#cam-display").style.backgroundImage = newBackground;
+  //document.querySelector("#cam-display").style.setProperty('--cam-bg-img', newBackground);
   document.querySelector("#cam-display").innerHTML = camText;
 });
 /*
@@ -90,10 +91,11 @@ socket.on("messageBack", (backmsg) => {
     msgText = "";
   }
   document.querySelector("#message-display").style.backgroundImage = newBackground;
+  //document.querySelector("#message-display").style.setProperty('--msg-bg-img', newBackground);
   document.querySelector("#message-display").innerHTML = msgText;
 });
 
-// Canvas image display to clients
+// Display the canvas image to clients
 socket.on('imageSaved', function(data) {
   console.log('Image saved:', data.imagePath);
   document.querySelector("#message-display").style.backgroundImage = `url(${data.imagePath})`;
@@ -130,36 +132,73 @@ if (resetButton) {
 }
 
 
-// ATEM Mini Streaming status
-socket.on("streamingStatusChanged", (data) => {
-  console.log('Streaming status:', data.streamingStatus);
+function setStreamLights(data) {
+  const diskRecElement = document.getElementById('dskRec');
   const onAirElement = document.getElementById('onAir');
   const onAirFrameElement = document.getElementById('onAir-frame');
-  if (data.streamingStatus == 4) {
-    //console.log('Streaming');
-    onAirElement.classList.add('streaming');
+  if (data.strmStatus == true || data.dskStatus == true) {
     onAirFrameElement.classList.add('streaming');
   } else {
-    onAirElement.classList.remove('streaming');
     onAirFrameElement.classList.remove('streaming');
   }
-});
-// ATEM Mini tally status
-socket.on("InputChanged", (data) => {
-  console.log('Preview input:', data.changedInputs.previewInput);
-  console.log('Program input:', data.changedInputs.programInput);
-  //console.log(data);
+  if (data.strmStatus == true) {
+    onAirElement.classList.add('streaming');
+  } else {
+    onAirElement.classList.remove('streaming');
+  }
+  if (data.dskStatus == true) {
+    diskRecElement.classList.add('streaming');
+  } else {
+    diskRecElement.classList.remove('streaming');
+  }
+}
 
+function setTallyLights(data) {
+  console.log(data);
   // Reset all divs to gray
   for (let i = 1; i <= 4; i++) {
     document.getElementById(`input-${i}`).style.backgroundColor = 'rgb(39, 39, 42)';
   }
-
   // Set the preview input div to green
-  document.getElementById(`input-${data.changedInputs.previewInput}`).style.backgroundColor = 'var(--color-green)';
-
+  document.getElementById(`input-${data.inputs.previewInput}`).style.backgroundColor = 'var(--color-green)';
   // Set the program input div to red
-  document.getElementById(`input-${data.changedInputs.programInput}`).style.backgroundColor = 'var(--color-red)';
+  document.getElementById(`input-${data.inputs.programInput}`).style.backgroundColor = 'var(--color-red)';
+}
+
+// Get ATEM Mini Streaming and recording status
+socket.on("getStreamingAndInputStatus", (data) => {
+  console.log(`GET STREAMING STATUS ${data.strmStatus}`)
+  console.log(`GET RECORDING STATUS ${data.dskStatus}`)
+  setStreamLights(data);
+  setTallyLights(data);
+});
+// If ATEM Mini Streaming status changed
+socket.on("streamingStatusChanged", (data) => {
+  console.log('Streaming status:', data.streamingStatus);
+  setStreamLights(data);
+});
+// If ATEM Mini Tally status changed
+socket.on("InputChanged", (data) => {
+  console.log('Preview input:', data.inputs.previewInput);
+  console.log('Program input:', data.inputs.programInput);
+  setTallyLights(data);
+});
+// Display stored messages
+socket.on("storedMessages", (messages) => {
+  messages.forEach((message) => {
+    if (message.cam) {
+      console.log('Camera:', message.cam);
+      newBackground = camBtns[message.cam];
+      document.querySelector("#cam-display").style.backgroundImage = newBackground;
+      document.querySelector("#cam-display").innerHTML = "";
+    }
+    if (message.msg) {
+      console.log('Message:', message.msg);
+      newBackground = messageBtns[message.msg];
+      document.querySelector("#message-display").style.backgroundImage = newBackground;
+      document.querySelector("#message-display").innerHTML = "";
+    }
+  });
 });
 
 
@@ -180,54 +219,10 @@ socket.on("InputChanged", (data) => {
   })
   .catch(error => console.error("Error fetching messages:", error));
  */
-socket.on("messages", (messages) => {
-  messages.forEach((message) => {
-    if (message.cam) {
-      console.log('Camera:', message.cam);
-      newBackground = camBtns[message.cam];
-      document.querySelector("#cam-display").style.backgroundImage = newBackground;
-      document.querySelector("#cam-display").innerHTML = "";
-    }
-    if (message.msg) {
-      console.log('Message:', message.msg);
-      newBackground = messageBtns[message.msg];
-      document.querySelector("#message-display").style.backgroundImage = newBackground;
-      document.querySelector("#message-display").innerHTML = "";
-    }
-    if (message.streamingStatus) {
-      console.log('Streaming status:', message.streamingStatus);
-      const onAirElement = document.getElementById('onAir');
-      const onAirFrameElement = document.getElementById('onAir-frame');
-      if (message.streamingStatus == 4) {
-        //console.log('Streaming');
-        onAirElement.classList.add('streaming');
-        onAirFrameElement.classList.add('streaming');
-      } else {
-        onAirElement.classList.remove('streaming');
-        onAirFrameElement.classList.remove('streaming');
-      }
-    }
-    if (message.previewInput && message.programInput) {
-      console.log('Preview input:', message.previewInput);
-      console.log('Program input:', message.programInput);
-
-      // Reset all divs to gray
-      for (let i = 1; i <= 4; i++) {
-        document.getElementById(`input-${i}`).style.backgroundColor = 'rgb(39, 39, 42)';
-      }
-
-      // Set the preview input div to green
-      document.getElementById(`input-${message.previewInput}`).style.backgroundColor = 'var(--color-green)';
-
-      // Set the program input div to red
-      document.getElementById(`input-${message.programInput}`).style.backgroundColor = 'var(--color-red)';
-    }
-  });
-});
 
 
 
-
+// Modal dialog for Canvas pam amd zoom
 const dialog = document.querySelector('dialog');
 const openDialogButton = document.querySelector('#open-dialog');
 const closeDialogButton = document.querySelector('#close-dialog');
@@ -262,7 +257,6 @@ if (saveCanvasButton) {
       });
   });
 }
-
 
 
 

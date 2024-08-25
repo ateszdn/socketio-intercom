@@ -34,7 +34,7 @@ Object.keys(ifaces).forEach((ifname) => {
   });
 });
 
-console.log("IPs:", ips);
+console.log("Local network IPs:", ips);
 
 // Export the array of IP addresses
 module.exports = ips;

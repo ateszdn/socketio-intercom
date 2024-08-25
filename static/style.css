@@ -16,10 +16,14 @@ dialog {
 	}
 }
 
-#onAir {
-}
 #onAir.streaming {
 	color: var(--color-red);
+}
+#dskRec.streaming {
+	color: var(--color-red);
+}
+#dskRec.streaming .sd-card {
+	background-image: center no-repeat url(/static/images/sd-card-red.svg)!important;
 }
 
 #onAir-frame.streaming {

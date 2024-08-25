@@ -869,6 +869,10 @@ video {
   height: 12rem;
 }
 
+.h-6 {
+  height: 1.5rem;
+}
+
 .h-\[100vh\] {
   height: 100vh;
 }
@@ -879,6 +883,10 @@ video {
 
 .max-h-\[40vw\] {
   max-height: 40vw;
+}
+
+.w-3 {
+  width: 0.75rem;
 }
 
 .w-\[this-is\\\\\] {
@@ -1433,6 +1441,10 @@ video {
 
 .gap-12 {
   gap: 3rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
 }
 
 .gap-6 {
@@ -2635,11 +2647,16 @@ dialog {
   }
 }
 
-#onAir {
-}
-
 #onAir.streaming {
   color: var(--color-red);
+}
+
+#dskRec.streaming {
+  color: var(--color-red);
+}
+
+#dskRec.streaming .sd-card {
+  background-image: center no-repeat url(/static/images/sd-card-red.svg)!important;
 }
 
 #onAir-frame.streaming {
