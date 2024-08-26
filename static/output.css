@@ -1992,6 +1992,10 @@ video {
           box-decoration-break: clone;
 }
 
+.bg-contain {
+  background-size: contain;
+}
+
 .bg-cover {
   background-size: cover;
 }
@@ -2655,8 +2659,12 @@ dialog {
   color: var(--color-red);
 }
 
+#dskRec .sd-card {
+  background: center no-repeat url(/static/images/sd-card.svg);
+}
+
 #dskRec.streaming .sd-card {
-  background-image: center no-repeat url(/static/images/sd-card-red.svg)!important;
+  background: center no-repeat url(/static/images/sd-card-red.svg);
 }
 
 #onAir-frame.streaming {
