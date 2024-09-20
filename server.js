@@ -191,17 +191,25 @@ io.on("connection", (socket) => {
   socket.broadcast.emit("message", `${socket.id} HAS CONNECTED`);
   // When a new client connects...
   io.emit("storedMessages", messages); // ...send stored messages and
-  io.emit("getStreamingAndInputStatus", { // send the device's status
-    strmStatus: AtemDevice.state && AtemDevice.state.streaming && AtemDevice.state.streaming.status.state != 1,
-    dskStatus: AtemDevice.state && AtemDevice.state.recording && AtemDevice.state.recording.status.state != 0,
-    inputs: {previewInput: AtemDevice.state.video.mixEffects[0].previewInput, programInput: AtemDevice.state.video.mixEffects[0].programInput}
-  });
-  console.log('++++++++++++++++++++')
-  console.log('+ streaming:', AtemDevice.state && AtemDevice.state.streaming && AtemDevice.state.streaming.status.state != 1, '+');
-  console.log('+ recording:', AtemDevice.state && AtemDevice.state.recording && AtemDevice.state.recording.status.state != 0, '+');
-  console.log('+ previewInput:', AtemDevice.state.video.mixEffects[0].previewInput, ' +')
-  console.log('+ programInput:', AtemDevice.state.video.mixEffects[0].programInput, ' +')
-  console.log('++++++++++++++++++++')
+  // check whether the ATEM Mini is connected before emitting the device's status
+  if (AtemDevice.connected) {
+    console.log('ATEM Mini connected');
+    io.emit("getStreamingAndInputStatus", { // send the device's status
+      strmStatus: AtemDevice.state && AtemDevice.state.streaming && AtemDevice.state.streaming.status.state != 1,
+      dskStatus: AtemDevice.state && AtemDevice.state.recording && AtemDevice.state.recording.status.state != 0,
+      inputs: {previewInput: AtemDevice.state.video.mixEffects[0].previewInput, programInput: AtemDevice.state.video.mixEffects[0].programInput}
+    });
+  } else {
+    console.log('ATEM Mini not connected');
+  }
+  if (AtemDevice.connected) {
+    console.log('++++++++++++++++++++')
+    console.log('+ streaming:', AtemDevice.state && AtemDevice.state.streaming && AtemDevice.state.streaming.status.state != 1, '+');
+    console.log('+ recording:', AtemDevice.state && AtemDevice.state.recording && AtemDevice.state.recording.status.state != 0, '+');
+    console.log('+ previewInput:', AtemDevice.state.video.mixEffects[0].previewInput, ' +')
+    console.log('+ programInput:', AtemDevice.state.video.mixEffects[0].programInput, ' +')
+    console.log('++++++++++++++++++++')
+  }
   //socket.on("hi", () => {
   //  fs.appendFileSync("log.txt", `${printMyDate()}\n${socket.id} HAS CONNECTED\n\n`)
   //  console.log("##### HI #####");
