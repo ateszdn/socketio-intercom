@@ -1,4 +1,4 @@
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3101;
 
 const cors = require("cors");
 const express = require("express");
@@ -192,6 +192,24 @@ io.on("connection", (socket) => {
   // When a new client connects...
   io.emit("storedMessages", messages); // ...send stored messages and
   // check whether the ATEM Mini is connected before emitting the device's status
+  if (AtemDevice) {
+    console.log('*-/-*-/-*-/-*-/-*-/-*-/-*-/-*-/-*');
+    /* console.log('AtemDevice:', AtemDevice); */
+    /* console.log('AtemDevice connected status:', !!AtemDevice && !!AtemDevice.connected); */
+    /* const util = require('util');
+    console.log('AtemDevice _events:', util.inspect(AtemDevice._events, { depth: null, colors: true })); */
+    console.log('AtemDevice state:', AtemDevice.state.fairlight.inputs['1301'].sources);
+    console.log('*-/-*-/-*-/-*-/-*-/-*-/-*-/-*-/-*');
+    // set faderGain to 320
+    /* AtemDevice.state.fairlight.inputs['1301'].sources[-65280].properties.faderGain = -320; */
+    AtemDevice.state.fairlight.inputs['1301'].sources[-65280].properties.faderGain = '-320'; // doesn"t work
+    /* https://sofie-automation.github.io/sofie-atem-connection/classes/Atem.html#setFairlightAudioMixerSourceProps */
+    AtemDevice.setFairlightAudioMixerSourceProps(1301, -65280, { // it works!
+      faderGain: '-220',
+    });
+    /* AtemDevice.startStreaming(); */ // just testing
+    console.log('MIC-1 faderGain:', AtemDevice.state.fairlight.inputs['1301'].sources[-65280].properties.faderGain);
+  }
   if (AtemDevice.connected) {
     console.log('ATEM Mini connected');
     io.emit("getStreamingAndInputStatus", { // send the device's status
@@ -266,6 +284,7 @@ io.on("connection", (socket) => {
 // ATEM Mini streaming status and input changes (Tally status)
 AtemDevice.on('stateChanged', (state, pathToChange) => {
   console.log('State changed:', pathToChange);
+  /* console.log('MIC-1 faderGain:', AtemDevice.state.fairlight.inputs['1301'].sources[-65280].properties.faderGain); */
   //console.log('State:', state);
   //console.log(`previewInput: ${state.video.mixEffects[0].previewInput}`);
   //console.log(`programInput: ${state.video.mixEffects[0].programInput}`);
