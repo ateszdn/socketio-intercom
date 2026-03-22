@@ -173,6 +173,7 @@ onPreview((imageData) => {
 });
 
 function updatePreviewState() {
+  console.log("updatePreviewState: messageActive=%s", messageActive);
   if (messageActive) {
     stopPreview();
   } else {
