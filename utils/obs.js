@@ -71,17 +71,20 @@ function onPreview(callback) {
 
 function startPreview() {
   if (previewInterval) return;
+  console.log("OBS preview started (interval: %dms, width: %dpx, quality: %d)", PREVIEW_INTERVAL, PREVIEW_WIDTH, PREVIEW_QUALITY);
   previewInterval = setInterval(async () => {
-    if (!obsStatus.connected || !previewCallback) return;
+    if (!obsStatus.connected) { return; }
+    if (!previewCallback) { return; }
     try {
-      // Get the currently active program scene
       const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
+      console.log("OBS preview: capturing scene '%s'", currentProgramSceneName);
       const response = await obs.call("GetSourceScreenshot", {
         sourceName: currentProgramSceneName,
         imageFormat: "jpg",
         imageWidth: PREVIEW_WIDTH,
         imageCompressionQuality: PREVIEW_QUALITY,
       });
+      console.log("OBS preview: got image (%d bytes)", response.imageData.length);
       previewCallback(response.imageData);
     } catch (err) {
       console.error("OBS preview error:", err.message || err);
