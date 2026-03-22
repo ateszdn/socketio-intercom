@@ -83,8 +83,8 @@ function startPreview() {
         imageCompressionQuality: PREVIEW_QUALITY,
       });
       previewCallback(response.imageData);
-    } catch (_err) {
-      // OBS busy or scene unavailable — silently skip
+    } catch (err) {
+      console.error("OBS preview error:", err.message || err);
     }
   }, PREVIEW_INTERVAL);
 }
