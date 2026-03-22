@@ -10,7 +10,7 @@ try {
   process.exit(1);
 }
 
-let ips = [];  // Store all external IPv4 addresses here
+const ips = [];  // Store all external IPv4 addresses here
 
 // Iterate over each network interface
 Object.keys(ifaces).forEach((ifname) => {

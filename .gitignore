@@ -1,7 +1,14 @@
 
 /.nova
-ui-elements/ui-images.afdesign~lock~
-/.DS_Store
-/node_modules
 .DS_Store
+/node_modules
 log.txt
+
+# Environment
+.env
+
+# Generated files
+public/index.html
+static/output.css
+static/qr/qrcode.svg
+static/images/screenshot/
