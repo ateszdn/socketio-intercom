@@ -13,6 +13,7 @@ const bodyParser = require("body-parser");
 const printMyDate = require("./utils/utils");
 const localNetwork = require("./utils/localNetwork");
 const AtemDevice = require("./utils/atem");
+const { obsStatus } = require("./utils/obs");
 
 const btnData = require("./json/btnData.json");
 const camBtns = btnData.camBtns;
@@ -34,7 +35,7 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
 const expressServer = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running at ${clientAddress}admin`);
   fs.appendFileSync(
     "log.txt",
     `${printMyDate()}\nServer running on port ${PORT}\nLocal network IPs: ${localNetwork}\n\n`
@@ -74,7 +75,7 @@ loadMessages();
 // --- Routes ---
 
 app.get("/", (req, res) => {
-  res.redirect("/admin");
+  res.render("index", { title: "Intercom", messages: messages });
 });
 
 app.get("/admin", (req, res) => {
@@ -134,18 +135,27 @@ QRCode.toFile(
   }
 );
 
-// --- ATEM helper ---
+// --- Streaming/recording status (ATEM OR OBS) ---
 
-function getAtemStatus() {
+function getAtemStreamingStatus() {
+  if (!AtemDevice.connected) return { streaming: false, recording: false };
   const state = AtemDevice.state;
   return {
-    strmStatus: state.streaming && state.streaming.status.state !== 1,
-    dskStatus: state.recording && state.recording.status.state !== 0,
-    inputs: {
-      previewInput: state.video.mixEffects[0].previewInput,
-      programInput: state.video.mixEffects[0].programInput,
-    },
+    streaming: state.streaming && state.streaming.status.state !== 1,
+    recording: state.recording && state.recording.status.state !== 0,
   };
+}
+
+function getCombinedStatus() {
+  const atem = getAtemStreamingStatus();
+  return {
+    strmStatus: atem.streaming || obsStatus.streaming,
+    dskStatus: atem.recording || obsStatus.recording,
+  };
+}
+
+function broadcastStreamingStatus() {
+  io.emit("streamingStatusChanged", getCombinedStatus());
 }
 
 // --- Socket.IO ---
@@ -156,9 +166,17 @@ io.on("connection", (socket) => {
   // Send stored messages to new clients
   socket.emit("storedMessages", messages);
 
-  // Send ATEM status if connected
-  if (AtemDevice.connected) {
-    socket.emit("getStreamingAndInputStatus", getAtemStatus());
+  // Send combined streaming status and ATEM tally if available
+  const combined = getCombinedStatus();
+  if (combined.strmStatus || combined.dskStatus || AtemDevice.connected) {
+    const status = { ...combined };
+    if (AtemDevice.connected) {
+      status.inputs = {
+        previewInput: AtemDevice.state.video.mixEffects[0].previewInput,
+        programInput: AtemDevice.state.video.mixEffects[0].programInput,
+      };
+    }
+    socket.emit("getStreamingAndInputStatus", status);
   }
 
   socket.on("clientCam", (cam) => {
@@ -203,10 +221,7 @@ AtemDevice.on("stateChanged", (state, pathToChange) => {
     pathToChange.includes("streaming.status") ||
     pathToChange.includes("recording.status")
   ) {
-    io.emit("streamingStatusChanged", {
-      strmStatus: state.streaming && state.streaming.status.state !== 1,
-      dskStatus: state.recording && state.recording.status.state !== 0,
-    });
+    broadcastStreamingStatus();
   }
 
   if (
@@ -220,4 +235,16 @@ AtemDevice.on("stateChanged", (state, pathToChange) => {
       },
     });
   }
+});
+
+// --- OBS state change broadcasting ---
+
+const { obs } = require("./utils/obs");
+
+obs.on("StreamStateChanged", () => {
+  broadcastStreamingStatus();
+});
+
+obs.on("RecordStateChanged", () => {
+  broadcastStreamingStatus();
 });
