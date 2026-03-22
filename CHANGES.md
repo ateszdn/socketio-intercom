@@ -4,7 +4,8 @@
 
 ### Added
 - **OBS Studio integration** — streaming and recording status from OBS via WebSocket (`obs-websocket-js`), combined with ATEM using OR logic; either source triggers "On Air" / "Disk" indicators
-- **`utils/obs.js`** — OBS WebSocket connection with auto-reconnect (retries every 10s)
+- **OBS program preview** — when the MSG box is idle (no active message), a low-res screenshot of the OBS program output is shown every 3s so camera operators can see the current composition. Messages take priority; preview resumes on reset. Configurable via `OBS_PREVIEW_INTERVAL`, `OBS_PREVIEW_WIDTH`, `OBS_PREVIEW_QUALITY` in `.env`
+- **`utils/obs.js`** — OBS WebSocket connection with auto-reconnect (retries every 10s) and program preview capture
 - **`dotenv` support** — `.env` file for configuration (`PORT`, `OBS_URL`, `OBS_PASSWORD`, Fairlight audio settings)
 - **`.env.example`** — documents all available environment variables
 - **ESLint** — `eslint.config.js` with project-wide linting rules, `npm run lint`

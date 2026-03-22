@@ -146,6 +146,7 @@ On startup, the terminal prints a clickable URL to `/admin`. The QR code (`stati
 | `streamingStatusChanged`     | `{strmStatus, dskStatus}`                        | Streaming/recording status change        |
 | `InputChanged`               | `{inputs: {previewInput, programInput}}`          | Tally light change (preview/program)     |
 | `imageSaved`                 | `{imagePath: "/static/images/screenshot/..."}` | Canvas image broadcast                   |
+| `obsPreview`                 | `"data:image/jpeg;base64,..."`                   | OBS program preview (when MSG box idle)  |
 
 ## Available Commands
 
@@ -194,12 +195,22 @@ The server connects to OBS via the built-in WebSocket server (available in OBS v
   - `dskStatus = ATEM recording OR OBS recording`
 - No client-side changes are needed — the same "On Air" and "Disk" indicators work for both sources
 
+### Program Preview
+
+When the MSG box is idle (no active message), the server periodically captures a low-res screenshot of the OBS program output and pushes it to all clients. This gives camera operators a reference of the current live composition so they can adjust their framing.
+
+- The preview automatically pauses when a message is sent and resumes on reset
+- Sent as base64 JPEG over Socket.IO — no files written to disk
+
 ### Configuration
 
-| Variable       | Default                  | Description                  |
-| -------------- | ------------------------ | ---------------------------- |
-| `OBS_URL`      | `ws://localhost:4455`    | OBS WebSocket server address |
-| `OBS_PASSWORD` | _(empty)_                | OBS WebSocket password       |
+| Variable               | Default                  | Description                          |
+| ---------------------- | ------------------------ | ------------------------------------ |
+| `OBS_URL`              | `ws://localhost:4455`    | OBS WebSocket server address         |
+| `OBS_PASSWORD`         | _(empty)_                | OBS WebSocket password               |
+| `OBS_PREVIEW_INTERVAL` | `3000`                   | Preview capture interval (ms)        |
+| `OBS_PREVIEW_WIDTH`    | `320`                    | Preview image width (px)             |
+| `OBS_PREVIEW_QUALITY`  | `30`                     | JPEG compression quality (1-100)     |
 
 ## Tech Stack
 

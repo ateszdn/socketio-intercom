@@ -13,7 +13,7 @@ const bodyParser = require("body-parser");
 const printMyDate = require("./utils/utils");
 const localNetwork = require("./utils/localNetwork");
 const AtemDevice = require("./utils/atem");
-const { obsStatus } = require("./utils/obs");
+const { obsStatus, onPreview, startPreview, stopPreview } = require("./utils/obs");
 
 const btnData = require("./json/btnData.json");
 const camBtns = btnData.camBtns;
@@ -158,6 +158,30 @@ function broadcastStreamingStatus() {
   io.emit("streamingStatusChanged", getCombinedStatus());
 }
 
+// --- OBS program preview ---
+
+let messageActive = false;
+
+// Check persisted messages for an active msg
+loadMessages();
+messageActive = messages.some((item) => item.msg);
+
+onPreview((imageData) => {
+  if (!messageActive) {
+    io.emit("obsPreview", imageData);
+  }
+});
+
+function updatePreviewState() {
+  if (messageActive) {
+    stopPreview();
+  } else {
+    startPreview();
+  }
+}
+
+updatePreviewState();
+
 // --- Socket.IO ---
 
 io.on("connection", (socket) => {
@@ -200,6 +224,8 @@ io.on("connection", (socket) => {
       messages.push({ msg: msg });
     }
     saveMessages();
+    messageActive = true;
+    updatePreviewState();
     io.emit("messageBack", msg);
   });
 
@@ -207,6 +233,8 @@ io.on("connection", (socket) => {
     loadMessages();
     messages = messages.filter((item) => !item.cam && !item.msg);
     saveMessages();
+    messageActive = false;
+    updatePreviewState();
     io.emit("camBack", "reset");
     io.emit("messageBack", "reset");
   });

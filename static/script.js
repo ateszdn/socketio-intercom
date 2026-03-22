@@ -55,20 +55,34 @@ socket.on("camBack", (backdata) => {
   }
 });
 
+let hasActiveMessage = false;
+
 socket.on("messageBack", (backmsg) => {
   const msgDisplay = document.querySelector("#message-display");
   if (backmsg === "reset") {
+    hasActiveMessage = false;
     msgDisplay.style.backgroundImage = "";
     msgDisplay.innerHTML = "MSG";
   } else {
+    hasActiveMessage = true;
     msgDisplay.style.backgroundImage = messageBtns[backmsg];
     msgDisplay.innerHTML = "";
   }
 });
 
 socket.on("imageSaved", (data) => {
+  hasActiveMessage = true;
   const msgDisplay = document.querySelector("#message-display");
   msgDisplay.style.backgroundImage = `url(${data.imagePath})`;
+  msgDisplay.innerHTML = "";
+});
+
+// --- OBS program preview (shown when MSG box is idle) ---
+
+socket.on("obsPreview", (imageData) => {
+  if (hasActiveMessage) return;
+  const msgDisplay = document.querySelector("#message-display");
+  msgDisplay.style.backgroundImage = `url(${imageData})`;
   msgDisplay.innerHTML = "";
 });
 
@@ -80,6 +94,7 @@ socket.on("storedMessages", (messages) => {
       document.querySelector("#cam-display").innerHTML = "";
     }
     if (message.msg) {
+      hasActiveMessage = true;
       document.querySelector("#message-display").style.backgroundImage =
         messageBtns[message.msg];
       document.querySelector("#message-display").innerHTML = "";

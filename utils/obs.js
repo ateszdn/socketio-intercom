@@ -56,6 +56,46 @@ obs.on("RecordStateChanged", (event) => {
   console.log(`OBS recording: ${obsStatus.recording}`);
 });
 
+// --- Program preview screenshot ---
+
+const PREVIEW_INTERVAL = parseInt(process.env.OBS_PREVIEW_INTERVAL, 10) || 3000;
+const PREVIEW_WIDTH = parseInt(process.env.OBS_PREVIEW_WIDTH, 10) || 320;
+const PREVIEW_QUALITY = parseInt(process.env.OBS_PREVIEW_QUALITY, 10) || 30;
+
+let previewInterval = null;
+let previewCallback = null;
+
+function onPreview(callback) {
+  previewCallback = callback;
+}
+
+function startPreview() {
+  if (previewInterval) return;
+  previewInterval = setInterval(async () => {
+    if (!obsStatus.connected || !previewCallback) return;
+    try {
+      // Get the currently active program scene
+      const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
+      const response = await obs.call("GetSourceScreenshot", {
+        sourceName: currentProgramSceneName,
+        imageFormat: "jpg",
+        imageWidth: PREVIEW_WIDTH,
+        imageCompressionQuality: PREVIEW_QUALITY,
+      });
+      previewCallback(response.imageData);
+    } catch (_err) {
+      // OBS busy or scene unavailable — silently skip
+    }
+  }, PREVIEW_INTERVAL);
+}
+
+function stopPreview() {
+  if (previewInterval) {
+    clearInterval(previewInterval);
+    previewInterval = null;
+  }
+}
+
 connect();
 
-module.exports = { obs, obsStatus };
+module.exports = { obs, obsStatus, onPreview, startPreview, stopPreview };
