@@ -173,7 +173,7 @@ onPreview((imageData) => {
 });
 
 function updatePreviewState() {
-  console.log("updatePreviewState: messageActive=%s", messageActive);
+  console.log(">>> updatePreviewState called, messageActive=" + messageActive);
   if (messageActive) {
     stopPreview();
   } else {
@@ -181,7 +181,9 @@ function updatePreviewState() {
   }
 }
 
+console.log(">>> BEFORE updatePreviewState");
 updatePreviewState();
+console.log(">>> AFTER updatePreviewState");
 
 // --- Socket.IO ---
 
