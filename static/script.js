@@ -136,7 +136,7 @@ function setTallyLights(data) {
 
 socket.on("getStreamingAndInputStatus", (data) => {
   setStreamLights(data);
-  setTallyLights(data);
+  if (data.inputs) setTallyLights(data);
 });
 
 socket.on("streamingStatusChanged", (data) => {

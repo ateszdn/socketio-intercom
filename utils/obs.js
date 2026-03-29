@@ -12,13 +12,22 @@ const obsStatus = {
   connected: false,
 };
 
+let reconnectTimer = null;
+
+function scheduleReconnect() {
+  if (reconnectTimer) return; // prevent duplicate timers
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connect();
+  }, 10000);
+}
+
 async function connect() {
   try {
     await obs.connect(OBS_URL, OBS_PASSWORD || undefined);
     obsStatus.connected = true;
     console.log("Connected to OBS WebSocket");
 
-    // Get initial streaming/recording state
     const streamStatus = await obs.call("GetStreamStatus");
     obsStatus.streaming = streamStatus.outputActive;
 
@@ -28,20 +37,26 @@ async function connect() {
     console.log(
       `  OBS streaming: ${obsStatus.streaming}, recording: ${obsStatus.recording}`
     );
+
+    // Restart preview if a callback is registered (reconnect case)
+    if (previewCallback && !previewInterval) {
+      startPreview();
+    }
   } catch (_err) {
     obsStatus.connected = false;
     console.log("OBS WebSocket not available, retrying in 10s...");
-    setTimeout(connect, 10000);
+    scheduleReconnect();
   }
 }
 
 // Reconnect on disconnect
 obs.on("ConnectionClosed", () => {
-  console.log("OBS WebSocket disconnected, retrying in 10s...");
   obsStatus.connected = false;
   obsStatus.streaming = false;
   obsStatus.recording = false;
-  setTimeout(connect, 10000);
+  stopPreview();
+  console.log("OBS WebSocket disconnected, retrying in 10s...");
+  scheduleReconnect();
 });
 
 // Streaming state changes
@@ -71,20 +86,21 @@ function onPreview(callback) {
 
 function startPreview() {
   if (previewInterval) return;
-  console.log("OBS preview started (interval: %dms, width: %dpx, quality: %d)", PREVIEW_INTERVAL, PREVIEW_WIDTH, PREVIEW_QUALITY);
+  if (!obsStatus.connected) return;
+  console.log("OBS preview started");
   previewInterval = setInterval(async () => {
-    if (!obsStatus.connected) { return; }
-    if (!previewCallback) { return; }
+    if (!obsStatus.connected || !previewCallback) {
+      stopPreview();
+      return;
+    }
     try {
       const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
-      console.log("OBS preview: capturing scene '%s'", currentProgramSceneName);
       const response = await obs.call("GetSourceScreenshot", {
         sourceName: currentProgramSceneName,
         imageFormat: "jpg",
         imageWidth: PREVIEW_WIDTH,
         imageCompressionQuality: PREVIEW_QUALITY,
       });
-      console.log("OBS preview: got image (%d bytes)", response.imageData.length);
       previewCallback(response.imageData);
     } catch (err) {
       console.error("OBS preview error:", err.message || err);

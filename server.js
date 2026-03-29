@@ -135,10 +135,14 @@ QRCode.toFile(
   }
 );
 
+// --- ATEM connection state ---
+
+let atemConnected = false;
+
 // --- Streaming/recording status (ATEM OR OBS) ---
 
 function getAtemStreamingStatus() {
-  if (!AtemDevice.connected) return { streaming: false, recording: false };
+  if (!atemConnected) return { streaming: false, recording: false };
   const state = AtemDevice.state;
   return {
     streaming: state.streaming && state.streaming.status.state !== 1,
@@ -168,12 +172,11 @@ messageActive = messages.some((item) => item.msg);
 
 onPreview((imageData) => {
   if (!messageActive) {
-    io.emit("obsPreview", imageData);
+    io.volatile.emit("obsPreview", imageData);
   }
 });
 
 function updatePreviewState() {
-  console.log(">>> updatePreviewState called, messageActive=" + messageActive);
   if (messageActive) {
     stopPreview();
   } else {
@@ -181,9 +184,7 @@ function updatePreviewState() {
   }
 }
 
-console.log(">>> BEFORE updatePreviewState");
 updatePreviewState();
-console.log(">>> AFTER updatePreviewState");
 
 // --- Socket.IO ---
 
@@ -193,18 +194,16 @@ io.on("connection", (socket) => {
   // Send stored messages to new clients
   socket.emit("storedMessages", messages);
 
-  // Send combined streaming status and ATEM tally if available
+  // Always send streaming status and tally to new clients
   const combined = getCombinedStatus();
-  if (combined.strmStatus || combined.dskStatus || AtemDevice.connected) {
-    const status = { ...combined };
-    if (AtemDevice.connected) {
-      status.inputs = {
-        previewInput: AtemDevice.state.video.mixEffects[0].previewInput,
-        programInput: AtemDevice.state.video.mixEffects[0].programInput,
-      };
-    }
-    socket.emit("getStreamingAndInputStatus", status);
+  const status = { ...combined };
+  if (atemConnected) {
+    status.inputs = {
+      previewInput: AtemDevice.state.video.mixEffects[0].previewInput,
+      programInput: AtemDevice.state.video.mixEffects[0].programInput,
+    };
   }
+  socket.emit("getStreamingAndInputStatus", status);
 
   socket.on("clientCam", (cam) => {
     loadMessages();
@@ -245,8 +244,20 @@ io.on("connection", (socket) => {
 
 // --- ATEM state change broadcasting ---
 
+// When ATEM connects (or reconnects), push full status to all clients
+AtemDevice.on("connected", () => {
+  atemConnected = true;
+  const status = getCombinedStatus();
+  status.inputs = {
+    previewInput: AtemDevice.state.video.mixEffects[0].previewInput,
+    programInput: AtemDevice.state.video.mixEffects[0].programInput,
+  };
+  console.log("ATEM connected, broadcasting status to all clients");
+  io.emit("getStreamingAndInputStatus", status);
+});
+
 AtemDevice.on("stateChanged", (state, pathToChange) => {
-  if (!AtemDevice.connected) return;
+  if (!atemConnected) return;
 
   if (
     pathToChange.includes("streaming.status") ||
