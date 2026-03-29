@@ -97,7 +97,7 @@ function startPreview() {
       const { currentProgramSceneName } = await obs.call("GetCurrentProgramScene");
       const response = await obs.call("GetSourceScreenshot", {
         sourceName: currentProgramSceneName,
-        imageFormat: "jpg",
+        imageFormat: "webp",
         imageWidth: PREVIEW_WIDTH,
         imageCompressionQuality: PREVIEW_QUALITY,
       });
