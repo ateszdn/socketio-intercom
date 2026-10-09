@@ -24,11 +24,13 @@ The `AtemDevice.on('stateChanged', ...)` listener is registered at module level.
 
 **Fix:** Either support input 4 properly or add a bounds check in `setTallyLights`.
 
+<!-- Obsolete for now: the Mic-1 fader code this refers to was removed.
 ### 1.4 Hardcoded Fairlight audio source ID
 **File:** [server.js:205-209](server.js#L205-L209)
 The source index `-65280` is hardcoded. This is specific to one ATEM model/firmware. On a different ATEM or after a firmware update this will throw.
 
 **Fix:** Enumerate `AtemDevice.state.fairlight.inputs['1301'].sources` dynamically, or at minimum wrap in a try/catch.
+-->
 
 ### 1.5 `admin.js` is dead code
 **File:** [static/admin.js](static/admin.js)

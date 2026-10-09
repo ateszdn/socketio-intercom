@@ -8,7 +8,9 @@ A real-time intercom and tally light system for video production, built with Soc
 - **Operator messaging** - Send visual commands to operators: zoom, brightness, focus, tripod direction, and OK acknowledgement
 - **Tally lights** - Show which camera is in preview (green) and program/live (red), pulled directly from the ATEM Mini
 - **Streaming & recording status** - Display "On Air" and "Disk Recording" indicators from ATEM Mini and/or OBS Studio (OR logic — either source triggers the indicator)
+<!-- Disabled: the Mic-1 fader code was removed (see CHANGES.md e5b8271)
 - **Fairlight audio control** - Adjust Mic-1 fader gain on the ATEM Mini's built-in audio mixer
+-->
 - **Canvas image sharing** - Draw on a canvas with pan/zoom, save as WebP, and broadcast to all clients
 - **QR code access** - Auto-generated QR code on the admin panel for quick client access
 - **Persistent messages** - Camera and message selections survive server restarts
@@ -165,7 +167,9 @@ The server automatically discovers the ATEM Mini on the local network using Bonj
 - **Streaming status** - states: `1` (idle), `2` (starting), `4` (streaming), `32` (stopping)
 - **Recording status** - `0` (idle) or active
 - **Video mix effects** - preview and program input numbers (1-4)
+<!-- Disabled: the Mic-1 fader code was removed
 - **Fairlight audio** - Mic-1 input (`1301`) fader gain
+-->
 
 ### References
 
