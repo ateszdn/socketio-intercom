@@ -11,6 +11,7 @@ A real-time intercom and tally light system for video production, built with Soc
 <!-- Disabled: the Mic-1 fader code was removed (see CHANGES.md e5b8271)
 - **Fairlight audio control** - Adjust Mic-1 fader gain on the ATEM Mini's built-in audio mixer
 -->
+- **Motorized master fader** - A physical motorized fader (Arduino Uno over USB) controls the ATEM's Fairlight master level, and follows it when the level changes elsewhere
 - **Canvas image sharing** - Draw on a canvas with pan/zoom, save as WebP, and broadcast to all clients
 - **QR code access** - Auto-generated QR code on the admin panel for quick client access
 - **Persistent messages** - Camera and message selections survive server restarts
@@ -28,6 +29,8 @@ ATEM Mini (Blackmagic)          OBS Studio
     |
     |--- /admin  --> Admin dashboard (full control)
     |--- /       --> Client view (read-only display for operators)
+    |
+    |--- USB serial --> Arduino Uno + motorized fader (master gain)
 ```
 
 Streaming/recording status is combined with OR logic: if **either** ATEM or OBS is streaming/recording, the "On Air" / "Disk" indicators light up. Tally lights (preview/program) come exclusively from the ATEM.
@@ -44,6 +47,7 @@ Streaming/recording status is combined with OR logic: if **either** ATEM or OBS 
 ├── utils/
 │   ├── atem.js                 # ATEM Mini connection & Bonjour discovery
 │   ├── obs.js                  # OBS WebSocket connection & state tracking
+│   ├── fader.js                # Motorized fader (serial) <-> ATEM master gain
 │   ├── localNetwork.js         # Detects local IPv4 addresses
 │   └── utils.js                # Date formatting utility
 ├── views/
@@ -86,7 +90,7 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` to set port, OBS WebSocket password, or ATEM audio config. All values have sensible defaults.
+Edit `.env` to set port, OBS WebSocket password, or the fader's serial port. All values have sensible defaults.
 
 ### Start the server
 
@@ -167,6 +171,7 @@ The server automatically discovers the ATEM Mini on the local network using Bonj
 - **Streaming status** - states: `1` (idle), `2` (starting), `4` (streaming), `32` (stopping)
 - **Recording status** - `0` (idle) or active
 - **Video mix effects** - preview and program input numbers (1-4)
+- **Fairlight master** - master fader gain, kept in sync with the motorized fader
 <!-- Disabled: the Mic-1 fader code was removed
 - **Fairlight audio** - Mic-1 input (`1301`) fader gain
 -->
@@ -216,11 +221,38 @@ When the MSG box is idle (no active message), the server periodically captures a
 | `OBS_PREVIEW_WIDTH`    | `320`                    | Preview image width (px)             |
 | `OBS_PREVIEW_QUALITY`  | `30`                     | JPEG compression quality (1-100)     |
 
+## Motorized Fader
+
+A motorized fader (ALPS RSA0N11M9A0J) on an Arduino Uno drives the ATEM's Fairlight master gain in both directions. The hardware (KiCad schematic) and the `fader.ino` firmware live in the separate `atem-motorfader` project.
+
+### Setup
+
+1. Flash `fader.ino` to the Uno and plug it in over USB
+2. Start the server. It finds the Uno automatically, or set `FADER_PORT` in `.env`
+
+### Behaviour
+
+- Moving the fader by hand sets the ATEM master gain (throttled to one update every 25 ms)
+- When the master gain changes elsewhere (ATEM Software Control, Stream Deck), the motor moves the fader to match
+- While a hand is on the knob (touch sense), the motor stays off. On release, the fader wins if it was moved; otherwise it catches up with the ATEM
+- On startup, and whenever the board reconnects, the fader moves to the current master gain
+- If the board is unplugged, the server retries every 5 seconds
+
+The position-to-dB curve is console-style: the bottom 3% of travel is -100 dB (-∞) to -60 dB, 0 dB sits at 75% travel, and -30 dB to the maximum takes 70% of the travel. Adjust it in the `TAPER` table in [utils/fader.js](utils/fader.js).
+
+### Configuration
+
+| Variable       | Default        | Description                                           |
+| -------------- | -------------- | ----------------------------------------------------- |
+| `FADER_PORT`   | _(auto)_       | Serial port of the Uno, e.g. `/dev/cu.usbmodem14101`  |
+| `FADER_BAUD`   | `115200`       | Serial baud rate (must match the firmware)            |
+| `FADER_MAX_DB` | `6`            | Master gain at the top of the fader travel (dB)       |
+
 ## Tech Stack
 
 - **Backend:** Node.js, Express, Socket.IO, Pug, dotenv
 - **Frontend:** Vanilla JavaScript, Tailwind CSS, HTML5 Canvas
-- **Hardware:** atem-connection, Bonjour (mDNS discovery)
+- **Hardware:** atem-connection, Bonjour (mDNS discovery), serialport (motorized fader)
 - **Streaming:** obs-websocket-js (OBS Studio integration)
 - **Utilities:** qrcode (SVG generation), body-parser, cors
 - **Dev tools:** ESLint, concurrently, nodemon, Tailwind CLI
