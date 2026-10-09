@@ -14,6 +14,7 @@ const printMyDate = require("./utils/utils");
 const localNetwork = require("./utils/localNetwork");
 const AtemDevice = require("./utils/atem");
 const { obsStatus, onPreview, startPreview, stopPreview } = require("./utils/obs");
+const { startFader } = require("./utils/fader");
 
 const btnData = require("./json/btnData.json");
 const camBtns = btnData.camBtns;
@@ -278,6 +279,10 @@ AtemDevice.on("stateChanged", (state, pathToChange) => {
     });
   }
 });
+
+// --- Motorized fader <-> ATEM master gain ---
+
+startFader(AtemDevice);
 
 // --- OBS state change broadcasting ---
 
