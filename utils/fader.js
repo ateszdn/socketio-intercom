@@ -1,14 +1,18 @@
 const { SerialPort, ReadlineParser } = require("serialport");
 
-// Motorized fader (Arduino Uno running fader.ino) <-> ATEM Fairlight master
-// gain. Protocol, 115200 baud, newline-terminated ASCII:
-//   board -> host   R (ready)   P<0-1023> (position)   K1 / K0 (touch)
-//   host -> board   T<0-1023> (move to target)   S (stop)
+// Motorized faders (Arduino Uno running fader.ino) <-> ATEM Fairlight gains.
+// Protocol, 115200 baud, newline-terminated ASCII; <ch> = fader channel 0..n-1:
+//   board -> host   R<n> (ready, n faders)   P<ch>:<0-1023> (position)
+//                   K<ch>:1 / K<ch>:0 (touch)
+//   host -> board   T<ch>:<0-1023> (move to target)   S<ch> / S (stop one / all)
 // Hardware and firmware live in the atem-motorfader project.
 
 const FADER_PORT = process.env.FADER_PORT || ""; // empty = auto-detect
 const FADER_BAUD = parseInt(process.env.FADER_BAUD, 10) || 115200;
 const FADER_MAX_DB = parseFloat(process.env.FADER_MAX_DB) || 6;
+// Comma-separated ATEM target per fader channel, in channel order:
+// master, mic1, mic2, or <input>/<source> such as 1301/-65280
+const FADER_CHANNELS = process.env.FADER_CHANNELS || "master";
 
 // Fairlight gains are integers in hundredths of a dB (atem-connection
 // passes faderGain to the wire as a raw int32). -10000 (-100 dB) is the
@@ -37,23 +41,53 @@ const RECONNECT_MS = 5000;
 // USB vendor IDs: Arduino (2341, 2a03), CH340 clones (1a86), FTDI (0403)
 const ARDUINO_VENDOR_IDS = ["2341", "2a03", "1a86", "0403"];
 
-const faderStatus = {
-  connected: false, // serial port open
-  ready: false, // board has booted and sent R
-  touched: false,
-  position: null,
+// Fairlight mic inputs on the ATEM Mini; -65280 is the mono/stereo source
+// (from the earlier Mic-1 code, commit e5b8271).
+const NAMED_TARGETS = {
+  mic1: "1301/-65280",
+  mic2: "1302/-65280",
 };
 
-let movedWhileTouched = false;
+const faderStatus = {
+  connected: false, // serial port open
+  ready: false, // board has booted and sent R<n>
+  boardFaders: null, // fader count the board reported
+  channels: [], // per channel: { target, touched, position }
+};
 
 let atem = null;
 let port = null;
 let reconnectTimer = null;
 
-let lastSentGain = null; // last gain we sent to the ATEM
-let lastAtemGain = null; // last gain the ATEM reported
-let lastTargetPos = null; // last T<n> we sent to the fader
-let moveStartedAt = 0;
+// --- ATEM targets ---
+
+function masterTarget() {
+  return {
+    name: "master",
+    statePath: "fairlight.master",
+    getGain: (state) => state?.fairlight?.master?.properties?.faderGain,
+    setGain: (gain) => atem.setFairlightAudioMixerMasterProps({ faderGain: gain }),
+  };
+}
+
+function sourceTarget(name, input, source) {
+  return {
+    name,
+    statePath: `fairlight.inputs.${input}.sources.${source}`,
+    getGain: (state) =>
+      state?.fairlight?.inputs?.[input]?.sources?.[source]?.properties?.faderGain,
+    setGain: (gain) =>
+      atem.setFairlightAudioMixerSourceProps(input, source, { faderGain: gain }),
+  };
+}
+
+function parseTarget(spec) {
+  if (spec === "master") return masterTarget();
+  const resolved = NAMED_TARGETS[spec] || spec;
+  const match = /^(\d+)\/(-?\d+)$/.exec(resolved);
+  if (!match) throw new Error(`Fader: unknown channel target "${spec}"`);
+  return sourceTarget(spec, parseInt(match[1], 10), match[2]);
+}
 
 // --- Mapping ---
 
@@ -112,83 +146,136 @@ function throttle(fn, intervalMs) {
   return throttled;
 }
 
-// --- Fader -> ATEM ---
+// --- One fader channel ---
 
-const sendGainToAtem = throttle((gain) => {
-  if (!atem || !isAtemReady()) return;
-  lastSentGain = gain;
-  atem.setFairlightAudioMixerMasterProps({ faderGain: gain }).catch((err) => {
-    console.error("Fader: failed to set ATEM master gain:", err.message);
-  });
-}, SEND_INTERVAL_MS);
+function createChannel(index, target) {
+  const status = { target: target.name, touched: false, position: null };
 
-function moveInProgress() {
-  return lastTargetPos !== null && Date.now() - moveStartedAt < MOVE_TIMEOUT_MS;
-}
+  let movedWhileTouched = false;
+  let lastSentGain = null; // last gain we sent to the ATEM
+  let lastAtemGain = null; // last gain the ATEM reported
+  let lastTargetPos = null; // last T<ch>:<n> we sent to the fader
+  let moveStartedAt = 0;
 
-function onPosition(position) {
-  faderStatus.position = position;
+  function atemGain() {
+    return atem ? target.getGain(atem.state) : undefined;
+  }
 
-  if (!faderStatus.touched) {
-    // Positions reported while the motor follows the ATEM are not user input
-    if (moveInProgress()) {
-      if (Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS) {
-        lastTargetPos = position;
-        moveStartedAt = 0;
+  function isAtemReady() {
+    return typeof atemGain() === "number";
+  }
+
+  // --- Fader -> ATEM ---
+
+  const sendGainToAtem = throttle((gain) => {
+    if (!isAtemReady()) return;
+    lastSentGain = gain;
+    target.setGain(gain).catch((err) => {
+      console.error(`Fader ${index}: failed to set ATEM ${target.name} gain:`, err.message);
+    });
+  }, SEND_INTERVAL_MS);
+
+  function moveInProgress() {
+    return lastTargetPos !== null && Date.now() - moveStartedAt < MOVE_TIMEOUT_MS;
+  }
+
+  function onPosition(position) {
+    status.position = position;
+
+    if (!status.touched) {
+      // Positions reported while the motor follows the ATEM are not user input
+      if (moveInProgress()) {
+        if (Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS) {
+          lastTargetPos = position;
+          moveStartedAt = 0;
+        }
+        return;
       }
+      // Resting within the dead band of the last target: nothing changed
+      if (
+        lastTargetPos !== null &&
+        Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS
+      ) {
+        return;
+      }
+    }
+
+    lastTargetPos = null;
+    if (status.touched) movedWhileTouched = true;
+    sendGainToAtem(positionToGain(position));
+  }
+
+  // --- ATEM -> fader ---
+
+  const sendTargetToFader = throttle((position) => {
+    if (!faderStatus.ready) return;
+    lastTargetPos = position;
+    moveStartedAt = Date.now();
+    writeLine(`T${index}:${position}`);
+  }, SEND_INTERVAL_MS);
+
+  function syncToAtem() {
+    if (!isAtemReady() || !faderStatus.ready || status.touched) return;
+    const gain = atemGain();
+    lastAtemGain = gain;
+    sendTargetToFader(gainToPosition(gain));
+  }
+
+  function onAtemStateChanged(pathToChange) {
+    const changed = pathToChange.some(
+      (p) => p === target.statePath || p.startsWith(`${target.statePath}.`)
+    );
+    if (!changed || !isAtemReady()) return;
+
+    const gain = atemGain();
+    if (gain === lastAtemGain) return; // e.g. a dynamics/EQ change on the same command
+    lastAtemGain = gain;
+
+    // Our own value coming back
+    if (lastSentGain !== null && Math.abs(gain - lastSentGain) <= ECHO_TOLERANCE_GAIN) {
       return;
     }
-    // Resting within the dead band of the last target: nothing changed
-    if (
-      lastTargetPos !== null &&
-      Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS
-    ) {
-      return;
+    lastSentGain = null;
+
+    if (status.touched) return; // the hand wins
+    sendTargetToFader(gainToPosition(gain));
+  }
+
+  function onTouch(touched) {
+    status.touched = touched;
+    if (touched) {
+      lastTargetPos = null;
+      movedWhileTouched = false;
+    } else if (movedWhileTouched && status.position !== null) {
+      // The hand moved it: the fader wins, including over any ATEM
+      // change that arrived while it was held
+      sendGainToAtem(positionToGain(status.position));
+      sendGainToAtem.flush();
+    } else {
+      // Only rested a hand on it: catch up with the ATEM
+      syncToAtem();
     }
   }
 
-  lastTargetPos = null;
-  if (faderStatus.touched) movedWhileTouched = true;
-  sendGainToAtem(positionToGain(position));
-}
-
-// --- ATEM -> fader ---
-
-const sendTargetToFader = throttle((position) => {
-  if (!faderStatus.ready) return;
-  lastTargetPos = position;
-  moveStartedAt = Date.now();
-  writeLine(`T${position}`);
-}, SEND_INTERVAL_MS);
-
-function isAtemReady() {
-  return Boolean(atem && atem.state && atem.state.fairlight && atem.state.fairlight.master);
-}
-
-function syncFaderToAtem() {
-  if (!isAtemReady() || !faderStatus.ready || faderStatus.touched) return;
-  const gain = atem.state.fairlight.master.properties.faderGain;
-  lastAtemGain = gain;
-  sendTargetToFader(gainToPosition(gain));
-}
-
-function onAtemStateChanged(state, pathToChange) {
-  if (!pathToChange.some((p) => p.startsWith("fairlight.master"))) return;
-  if (!isAtemReady()) return;
-
-  const gain = state.fairlight.master.properties.faderGain;
-  if (gain === lastAtemGain) return; // e.g. a dynamics/EQ change on the same command
-  lastAtemGain = gain;
-
-  // Our own value coming back
-  if (lastSentGain !== null && Math.abs(gain - lastSentGain) <= ECHO_TOLERANCE_GAIN) {
-    return;
+  function reset() {
+    status.touched = false;
+    lastTargetPos = null;
   }
-  lastSentGain = null;
 
-  if (faderStatus.touched) return; // the hand wins
-  sendTargetToFader(gainToPosition(gain));
+  function logGain() {
+    if (isAtemReady()) {
+      console.log(`Fader ${index}: ATEM ${target.name} gain ${atemGain()} (1/100 dB)`);
+    }
+  }
+
+  return { status, onPosition, onTouch, onAtemStateChanged, syncToAtem, reset, logGain };
 }
+
+const channels = FADER_CHANNELS.split(",")
+  .map((spec) => spec.trim())
+  .filter(Boolean)
+  .map((spec, index) => createChannel(index, parseTarget(spec)));
+faderStatus.channels = channels.map((channel) => channel.status);
 
 // --- Serial line handling ---
 
@@ -199,38 +286,45 @@ function writeLine(line) {
   });
 }
 
+// "<ch>:<value>" after the command letter -> [channel, value], or null
+function parseChannelValue(rest) {
+  const match = /^(\d+):(\d+)$/.exec(rest);
+  if (!match) return null;
+  const channel = channels[parseInt(match[1], 10)];
+  return channel ? [channel, parseInt(match[2], 10)] : null;
+}
+
 function onLine(rawLine) {
   const line = rawLine.trim();
   if (!line) return;
 
   switch (line[0]) {
-    case "R":
-      console.log("Fader: board ready");
+    case "R": {
+      const boardFaders = parseInt(line.slice(1), 10);
+      faderStatus.boardFaders = Number.isNaN(boardFaders) ? null : boardFaders;
+      console.log(`Fader: board ready, ${line.slice(1) || "?"} fader(s)`);
+      if (faderStatus.boardFaders !== null && faderStatus.boardFaders !== channels.length) {
+        console.log(
+          `Fader: FADER_CHANNELS lists ${channels.length} channel(s), the board has ${faderStatus.boardFaders}`
+        );
+      }
       faderStatus.ready = true;
-      faderStatus.touched = false;
-      lastTargetPos = null;
-      syncFaderToAtem();
-      break;
-    case "P": {
-      const position = parseInt(line.slice(1), 10);
-      if (!Number.isNaN(position)) onPosition(position);
+      channels.forEach((channel) => {
+        channel.reset();
+        channel.syncToAtem();
+      });
       break;
     }
-    case "K":
-      faderStatus.touched = line[1] === "1";
-      if (faderStatus.touched) {
-        lastTargetPos = null;
-        movedWhileTouched = false;
-      } else if (movedWhileTouched && faderStatus.position !== null) {
-        // The hand moved it: the fader wins, including over any ATEM
-        // change that arrived while it was held
-        sendGainToAtem(positionToGain(faderStatus.position));
-        sendGainToAtem.flush();
-      } else {
-        // Only rested a hand on it: catch up with the ATEM
-        syncFaderToAtem();
-      }
+    case "P": {
+      const parsed = parseChannelValue(line.slice(1));
+      if (parsed) parsed[0].onPosition(parsed[1]);
       break;
+    }
+    case "K": {
+      const parsed = parseChannelValue(line.slice(1));
+      if (parsed) parsed[0].onTouch(parsed[1] === 1);
+      break;
+    }
     default:
       console.log("Fader: unknown message:", line);
   }
@@ -274,7 +368,7 @@ async function connect() {
   port.on("close", () => {
     faderStatus.connected = false;
     faderStatus.ready = false;
-    faderStatus.touched = false;
+    channels.forEach((channel) => channel.reset());
     console.log(`Fader: ${path} closed, retrying in ${RECONNECT_MS / 1000}s...`);
     scheduleReconnect();
   });
@@ -289,7 +383,7 @@ async function connect() {
       scheduleReconnect();
       return;
     }
-    // Opening the port resets the Uno; it sends R once it has booted
+    // Opening the port resets the Uno; it sends R<n> once it has booted
     faderStatus.connected = true;
     console.log(`Fader: connected on ${path}`);
   });
@@ -298,14 +392,14 @@ async function connect() {
 function startFader(atemDevice) {
   atem = atemDevice;
   atem.on("connected", () => {
-    if (isAtemReady()) {
-      console.log(
-        `Fader: ATEM master gain ${atem.state.fairlight.master.properties.faderGain} (1/100 dB)`
-      );
-    }
-    syncFaderToAtem();
+    channels.forEach((channel) => {
+      channel.logGain();
+      channel.syncToAtem();
+    });
   });
-  atem.on("stateChanged", onAtemStateChanged);
+  atem.on("stateChanged", (state, pathToChange) => {
+    channels.forEach((channel) => channel.onAtemStateChanged(pathToChange));
+  });
   connect();
 }
 

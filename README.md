@@ -47,7 +47,7 @@ Streaming/recording status is combined with OR logic: if **either** ATEM or OBS 
 ├── utils/
 │   ├── atem.js                 # ATEM Mini connection & Bonjour discovery
 │   ├── obs.js                  # OBS WebSocket connection & state tracking
-│   ├── fader.js                # Motorized fader (serial) <-> ATEM master gain
+│   ├── fader.js                # Motorized fader(s) (serial) <-> ATEM Fairlight gains
 │   ├── localNetwork.js         # Detects local IPv4 addresses
 │   └── utils.js                # Date formatting utility
 ├── views/
@@ -240,13 +240,18 @@ A motorized fader (ALPS RSA0N11M9A0J) on an Arduino Uno drives the ATEM's Fairli
 
 The position-to-dB curve is console-style: the bottom 3% of travel is -100 dB (-∞) to -60 dB, 0 dB sits at 75% travel, and -30 dB to the maximum takes 70% of the travel. Adjust it in the `TAPER` table in [utils/fader.js](utils/fader.js).
 
+### Channels
+
+The serial protocol carries a fader channel number in every message (`P0:512`, `T0:767`, `K0:1`; see `fader.ino`), so a multi-fader board needs no protocol change. `FADER_CHANNELS` maps channels to ATEM Fairlight targets in order: `master`, `mic1` (input 1301), `mic2` (input 1302), or `<input>/<source>` such as `1301/-65280`. For a planned three-fader version: `FADER_CHANNELS=mic1,mic2,master`. If the board reports a different fader count, the server logs it.
+
 ### Configuration
 
-| Variable       | Default        | Description                                           |
-| -------------- | -------------- | ----------------------------------------------------- |
-| `FADER_PORT`   | _(auto)_       | Serial port of the Uno, e.g. `/dev/cu.usbmodem14101`  |
-| `FADER_BAUD`   | `115200`       | Serial baud rate (must match the firmware)            |
-| `FADER_MAX_DB` | `6`            | Master gain at the top of the fader travel (dB)       |
+| Variable         | Default        | Description                                           |
+| ---------------- | -------------- | ----------------------------------------------------- |
+| `FADER_PORT`     | _(auto)_       | Serial port of the Uno, e.g. `/dev/cu.usbmodem14101`  |
+| `FADER_BAUD`     | `115200`       | Serial baud rate (must match the firmware)            |
+| `FADER_MAX_DB`   | `6`            | Gain at the top of the fader travel (dB)              |
+| `FADER_CHANNELS` | `master`       | ATEM target per fader channel, comma-separated        |
 
 ## Tech Stack
 
