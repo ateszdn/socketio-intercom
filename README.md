@@ -238,7 +238,7 @@ A motorized fader (ALPS RSA0N11M9A0J) on an Arduino Uno drives the ATEM's Fairli
 - On startup, and whenever the board reconnects, the fader moves to the current master gain
 - If the board is unplugged, the server retries every 5 seconds
 
-The position-to-dB curve is console-style: the bottom 3% of travel is -100 dB (-∞) to -60 dB, 0 dB sits at 75% travel, and -30 dB to the maximum takes 70% of the travel. Adjust it in the `TAPER` table in [utils/fader.js](utils/fader.js).
+The position-to-dB curve matches the fader in ATEM Software Control, so both sit at the same height: +10 dB at the top, then an even scale down to -20 dB at 33% of travel (0 dB at 78%, -10 dB at 55.5%), then steeper: -46 dB at 16.5% and -∞ at the bottom. Adjust it in the `TAPER` table in [utils/fader.js](utils/fader.js).
 
 ### Channels
 
@@ -250,7 +250,6 @@ The serial protocol carries a fader channel number in every message (`P0:512`, `
 | ---------------- | -------------- | ----------------------------------------------------- |
 | `FADER_PORT`     | _(auto)_       | Serial port of the Uno, e.g. `/dev/cu.usbmodem14101`  |
 | `FADER_BAUD`     | `115200`       | Serial baud rate (must match the firmware)            |
-| `FADER_MAX_DB`   | `6`            | Gain at the top of the fader travel (dB)              |
 | `FADER_CHANNELS` | `master`       | ATEM target per fader channel, comma-separated        |
 
 ## Tech Stack

@@ -5,30 +5,34 @@ const { SerialPort, ReadlineParser } = require("serialport");
 //   board -> host   R<n> (ready, n faders)   P<ch>:<0-1023> (position)
 //                   K<ch>:1 / K<ch>:0 (touch)
 //   host -> board   T<ch>:<0-1023> (move to target)   S<ch> / S (stop one / all)
+//                   ? (who's there: board answers R<n> + positions)
 // Hardware and firmware live in the atem-motorfader project.
 
 const FADER_PORT = process.env.FADER_PORT || ""; // empty = auto-detect
 const FADER_BAUD = parseInt(process.env.FADER_BAUD, 10) || 115200;
-const FADER_MAX_DB = parseFloat(process.env.FADER_MAX_DB) || 6;
 // Comma-separated ATEM target per fader channel, in channel order:
 // master, mic1, mic2, or <input>/<source> such as 1301/-65280
 const FADER_CHANNELS = process.env.FADER_CHANNELS || "master";
+// FADER_DEBUG=1 logs every serial line in both directions
+const FADER_DEBUG = process.env.FADER_DEBUG === "1";
 
 // Fairlight gains are integers in hundredths of a dB (atem-connection
 // passes faderGain to the wire as a raw int32). -10000 (-100 dB) is the
 // bottom of the range and reads as -infinity.
 const GAIN_MIN = -10000;
 
-// Console-style taper: [position 0..1, dB]. The bottom 3% of travel fades
-// from -100 dB to -60 dB; the useful -30..max range gets 70% of travel.
+// Taper: [position 0..1, dB], matching the fader in ATEM Software Control
+// (Fairlight), so the physical fader sits at the same height and both move
+// together. Measured from screenshots, 2026-11-15: its scale is even from
+// +10 dB at the top down to -20 dB at 33 % (10 dB per dot), then steep:
+// -46 dB at 16.5 %, -inf at the bottom. Below -46 dB it is interpolated.
 const TAPER = [
   [0, -100],
-  [0.03, -60],
-  [0.15, -40],
-  [0.3, -30],
-  [0.5, -15],
-  [0.75, 0],
-  [1, FADER_MAX_DB],
+  [0.165, -46],
+  [0.33, -20],
+  [0.555, -10],
+  [0.78, 0],
+  [1, 10],
 ];
 
 const POS_MAX = 1023;
@@ -37,6 +41,8 @@ const ECHO_TOLERANCE_GAIN = 10; // 0.1 dB: ATEM echoing our own value back
 const SETTLE_TOLERANCE_POS = 8; // counts: fader stopped close enough to target
 const MOVE_TIMEOUT_MS = 1500; // firmware gives up after 1 s
 const RECONNECT_MS = 5000;
+const HELLO_RETRY_MS = 2000; // resend ? until the board answers R<n>
+const HELLO_TRIES = 5;
 
 // USB vendor IDs: Arduino (2341, 2a03), CH340 clones (1a86), FTDI (0403)
 const ARDUINO_VENDOR_IDS = ["2341", "2a03", "1a86", "0403"];
@@ -58,6 +64,7 @@ const faderStatus = {
 let atem = null;
 let port = null;
 let reconnectTimer = null;
+let helloTimer = null;
 
 // --- ATEM targets ---
 
@@ -112,7 +119,7 @@ function positionToGain(position) {
 }
 
 function gainToPosition(gain) {
-  const db = Math.min(Math.max(gain / 100, taperDb[0]), FADER_MAX_DB);
+  const db = Math.min(Math.max(gain / 100, taperDb[0]), taperDb[taperDb.length - 1]);
   return Math.round(interpolate(db, taperDb, taperPos) * POS_MAX);
 }
 
@@ -281,6 +288,7 @@ faderStatus.channels = channels.map((channel) => channel.status);
 
 function writeLine(line) {
   if (!port || !port.isOpen) return;
+  if (FADER_DEBUG) console.log(`Fader >> ${line}`);
   port.write(`${line}\n`, (err) => {
     if (err) console.error("Fader: serial write failed:", err.message);
   });
@@ -297,6 +305,7 @@ function parseChannelValue(rest) {
 function onLine(rawLine) {
   const line = rawLine.trim();
   if (!line) return;
+  if (FADER_DEBUG) console.log(`Fader << ${line}`);
 
   switch (line[0]) {
     case "R": {
@@ -366,6 +375,7 @@ async function connect() {
   parser.on("data", onLine);
 
   port.on("close", () => {
+    clearTimeout(helloTimer);
     faderStatus.connected = false;
     faderStatus.ready = false;
     channels.forEach((channel) => channel.reset());
@@ -383,9 +393,18 @@ async function connect() {
       scheduleReconnect();
       return;
     }
-    // Opening the port resets the Uno; it sends R<n> once it has booted
+    // Opening the port resets the Uno, which then sends R<n> by itself. An
+    // ESP32 board keeps running, so ask with "?" until R<n> arrives (an Uno
+    // still in its bootloader ignores it).
     faderStatus.connected = true;
     console.log(`Fader: connected on ${path}`);
+    let tries = 0;
+    const hello = () => {
+      if (faderStatus.ready || !port.isOpen || tries++ >= HELLO_TRIES) return;
+      writeLine("?");
+      helloTimer = setTimeout(hello, HELLO_RETRY_MS);
+    };
+    helloTimer = setTimeout(hello, 100);
   });
 }
 
