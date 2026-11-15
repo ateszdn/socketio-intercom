@@ -6,6 +6,9 @@ const { SerialPort, ReadlineParser } = require("serialport");
 //                   K<ch>:1 / K<ch>:0 (touch)
 //   host -> board   T<ch>:<0-1023> (move to target)   S<ch> / S (stop one / all)
 //                   ? (who's there: board answers R<n> + positions)
+//                   L<ch>:<left>:<right> (audio levels for the board's meter,
+//                     0.1 dB, -600 = -60 dB = silence; forwarded at the
+//                     ATEM's ~25/s, not shown by FADER_DEBUG)
 // Hardware and firmware live in the atem-motorfader project.
 
 const FADER_PORT = process.env.FADER_PORT || ""; // empty = auto-detect
@@ -20,6 +23,9 @@ const FADER_DEBUG = process.env.FADER_DEBUG === "1";
 // passes faderGain to the wire as a raw int32). -10000 (-100 dB) is the
 // bottom of the range and reads as -infinity.
 const GAIN_MIN = -10000;
+
+// Meter levels on the wire: 0.1 dB, clamped to -60..0 dB
+const LEVEL_FLOOR = -600;
 
 // Taper: [position 0..1, dB], matching the fader in ATEM Software Control
 // (Fairlight), so the physical fader sits at the same height and both move
@@ -72,6 +78,7 @@ function masterTarget() {
   return {
     name: "master",
     statePath: "fairlight.master",
+    matchesLevels: (e) => e.type === "master",
     getGain: (state) => state?.fairlight?.master?.properties?.faderGain,
     setGain: (gain) => atem.setFairlightAudioMixerMasterProps({ faderGain: gain }),
   };
@@ -81,6 +88,8 @@ function sourceTarget(name, input, source) {
   return {
     name,
     statePath: `fairlight.inputs.${input}.sources.${source}`,
+    matchesLevels: (e) =>
+      e.type === "source" && e.index === input && String(e.source) === source,
     getGain: (state) =>
       state?.fairlight?.inputs?.[input]?.sources?.[source]?.properties?.faderGain,
     setGain: (gain) =>
@@ -269,13 +278,33 @@ function createChannel(index, target) {
     lastTargetPos = null;
   }
 
+  // ATEM level (1/100 dB) -> meter level on the wire (0.1 dB)
+  function meterLevel(level) {
+    return Math.min(Math.max(Math.round(level / 10), LEVEL_FLOOR), 0);
+  }
+
+  function onLevels(event) {
+    if (!faderStatus.ready || !target.matchesLevels(event)) return;
+    const { leftLevel, rightLevel } = event.levels;
+    writeLine(`L${index}:${meterLevel(leftLevel)}:${meterLevel(rightLevel)}`);
+  }
+
   function logGain() {
     if (isAtemReady()) {
       console.log(`Fader ${index}: ATEM ${target.name} gain ${atemGain()} (1/100 dB)`);
     }
   }
 
-  return { status, onPosition, onTouch, onAtemStateChanged, syncToAtem, reset, logGain };
+  return {
+    status,
+    onPosition,
+    onTouch,
+    onAtemStateChanged,
+    onLevels,
+    syncToAtem,
+    reset,
+    logGain,
+  };
 }
 
 const channels = FADER_CHANNELS.split(",")
@@ -288,7 +317,7 @@ faderStatus.channels = channels.map((channel) => channel.status);
 
 function writeLine(line) {
   if (!port || !port.isOpen) return;
-  if (FADER_DEBUG) console.log(`Fader >> ${line}`);
+  if (FADER_DEBUG && line[0] !== "L") console.log(`Fader >> ${line}`);
   port.write(`${line}\n`, (err) => {
     if (err) console.error("Fader: serial write failed:", err.message);
   });
@@ -303,7 +332,9 @@ function parseChannelValue(rest) {
 }
 
 function onLine(rawLine) {
-  const line = rawLine.trim();
+  // Drop non-printable bytes: a board that just reset can send noise before
+  // its first line (seen as "\u00ff\u0000...R1" after flashing the ESP32)
+  const line = rawLine.replace(/[^\x20-\x7e]/g, "").trim();
   if (!line) return;
   if (FADER_DEBUG) console.log(`Fader << ${line}`);
 
@@ -415,6 +446,14 @@ function startFader(atemDevice) {
       channel.logGain();
       channel.syncToAtem();
     });
+    // Ask the ATEM to stream Fairlight levels (for the board's OLED meter)
+    atem.startFairlightMixerSendLevels().catch((err) => {
+      console.error("Fader: cannot start ATEM level stream:", err.message);
+    });
+  });
+  atem.on("levelChanged", (event) => {
+    if (event.system !== "fairlight") return;
+    channels.forEach((channel) => channel.onLevels(event));
   });
   atem.on("stateChanged", (state, pathToChange) => {
     channels.forEach((channel) => channel.onAtemStateChanged(pathToChange));
