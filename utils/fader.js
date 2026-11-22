@@ -209,21 +209,14 @@ function createChannel(index, target) {
     status.position = position;
 
     if (!status.touched) {
-      // Positions reported while the motor follows the ATEM are not user input
-      if (moveInProgress()) {
-        if (Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS) {
-          lastTargetPos = position;
-          moveStartedAt = 0;
-        }
-        return;
+      // Only a hand moves the ATEM. Untouched reports are the motor
+      // following, settling or hunting around its target; sending them as
+      // gain fed a loop with the ATEM's echoes at the streaming location
+      // (2026-11-22: ~75 P/s at rest, ATEM flooded, master and meters lagged).
+      if (moveInProgress() && Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS) {
+        moveStartedAt = 0;
       }
-      // Resting within the dead band of the last target: nothing changed
-      if (
-        lastTargetPos !== null &&
-        Math.abs(position - lastTargetPos) <= SETTLE_TOLERANCE_POS
-      ) {
-        return;
-      }
+      return;
     }
 
     lastTargetPos = null;
