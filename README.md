@@ -238,6 +238,7 @@ A motorized fader (ALPS RSA0N11M9A0J) on an Arduino Uno drives the ATEM's Fairli
 - On startup, and whenever the board reconnects, the fader moves to the current master gain
 - If the board is unplugged, the server retries every 5 seconds
 - The server streams the ATEM's Fairlight audio levels to the board (`L<ch>:<left>:<right>`, 0.1 dB, about 25 per second) for an optional OLED level meter on the ESP32 board
+- For the board's second display it also sends the levels (`M<i>:<left>:<right>`) and the input gain and pan (`V<i>:<gain 0.1 dB>:<pan -100..100>`) of display-only channels, `mic1` and `mic2` by default (`FADER_MONITOR`); gain and pan when the board is ready and whenever they change
 
 The position-to-dB curve matches the fader in ATEM Software Control, so both sit at the same height: +10 dB at the top, then an even scale down to -20 dB at 33% of travel (0 dB at 78%, -10 dB at 55.5%), then steeper: -46 dB at 16.5% and -∞ at the bottom. Adjust it in the `TAPER` table in [utils/fader.js](utils/fader.js).
 
@@ -252,6 +253,7 @@ The serial protocol carries a fader channel number in every message (`P0:512`, `
 | `FADER_PORT`     | _(auto)_       | Serial port of the Uno, e.g. `/dev/cu.usbmodem14101`  |
 | `FADER_BAUD`     | `115200`       | Serial baud rate (must match the firmware)            |
 | `FADER_CHANNELS` | `master`       | ATEM target per fader channel, comma-separated        |
+| `FADER_MONITOR`  | `mic1,mic2`    | Display-only channels (levels, input gain, pan); empty = none |
 | `FADER_DEBUG`    | _(off)_        | `1` logs every serial line (except meter levels)      |
 
 ## Tech Stack

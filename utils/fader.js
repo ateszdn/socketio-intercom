@@ -9,6 +9,11 @@ const { SerialPort, ReadlineParser } = require("serialport");
 //                   L<ch>:<left>:<right> (audio levels for the board's meter,
 //                     0.1 dB, -600 = -60 dB = silence; forwarded at the
 //                     ATEM's ~25/s, not shown by FADER_DEBUG)
+//                   M<i>:<left>:<right> (levels of display-only channel i,
+//                     see FADER_MONITOR; as L, not shown by FADER_DEBUG)
+//                   V<i>:<gain>:<pan> (input gain of display-only channel i
+//                     in 0.1 dB, pan -100 = L100 .. 100 = R100; sent when
+//                     the board is ready and when either changes)
 // Hardware and firmware live in the atem-motorfader project.
 
 const FADER_PORT = process.env.FADER_PORT || ""; // empty = auto-detect
@@ -16,6 +21,9 @@ const FADER_BAUD = parseInt(process.env.FADER_BAUD, 10) || 115200;
 // Comma-separated ATEM target per fader channel, in channel order:
 // master, mic1, mic2, or <input>/<source> such as 1301/-65280
 const FADER_CHANNELS = process.env.FADER_CHANNELS || "master";
+// Comma-separated display-only channels for the board's 0.96" OLED (levels,
+// input gain and pan; no fader): mic1, mic2 or <input>/<source>. Empty = none.
+const FADER_MONITOR = process.env.FADER_MONITOR ?? "mic1,mic2";
 // FADER_DEBUG=1 logs every serial line in both directions
 const FADER_DEBUG = process.env.FADER_DEBUG === "1";
 
@@ -80,6 +88,7 @@ function masterTarget() {
     statePath: "fairlight.master",
     matchesLevels: (e) => e.type === "master",
     getGain: (state) => state?.fairlight?.master?.properties?.faderGain,
+    getProps: () => undefined, // no input gain or pan on the master
     setGain: (gain) => atem.setFairlightAudioMixerMasterProps({ faderGain: gain }),
   };
 }
@@ -92,6 +101,7 @@ function sourceTarget(name, input, source) {
       e.type === "source" && e.index === input && String(e.source) === source,
     getGain: (state) =>
       state?.fairlight?.inputs?.[input]?.sources?.[source]?.properties?.faderGain,
+    getProps: (state) => state?.fairlight?.inputs?.[input]?.sources?.[source]?.properties,
     setGain: (gain) =>
       atem.setFairlightAudioMixerSourceProps(input, source, { faderGain: gain }),
   };
@@ -278,11 +288,6 @@ function createChannel(index, target) {
     lastTargetPos = null;
   }
 
-  // ATEM level (1/100 dB) -> meter level on the wire (0.1 dB)
-  function meterLevel(level) {
-    return Math.min(Math.max(Math.round(level / 10), LEVEL_FLOOR), 0);
-  }
-
   function onLevels(event) {
     if (!faderStatus.ready || !target.matchesLevels(event)) return;
     const { leftLevel, rightLevel } = event.levels;
@@ -313,11 +318,54 @@ const channels = FADER_CHANNELS.split(",")
   .map((spec, index) => createChannel(index, parseTarget(spec)));
 faderStatus.channels = channels.map((channel) => channel.status);
 
+// --- Display-only channels (FADER_MONITOR) ---
+
+// ATEM level (1/100 dB) -> meter level on the wire (0.1 dB)
+function meterLevel(level) {
+  return Math.min(Math.max(Math.round(level / 10), LEVEL_FLOOR), 0);
+}
+
+function changedUnder(pathToChange, statePath) {
+  return pathToChange.some((p) => p === statePath || p.startsWith(`${statePath}.`));
+}
+
+function createMonitor(index, target) {
+  let lastValues = null;
+
+  // force: send even if unchanged (board just became ready)
+  function sendValues(force) {
+    if (!faderStatus.ready || !atem) return;
+    const props = target.getProps(atem.state);
+    if (!props || typeof props.gain !== "number") return;
+    const line = `V${index}:${Math.round(props.gain / 10)}:${Math.round(props.balance / 100)}`;
+    if (!force && line === lastValues) return;
+    lastValues = line;
+    writeLine(line);
+  }
+
+  function onLevels(event) {
+    if (!faderStatus.ready || !target.matchesLevels(event)) return;
+    const { leftLevel, rightLevel } = event.levels;
+    writeLine(`M${index}:${meterLevel(leftLevel)}:${meterLevel(rightLevel)}`);
+  }
+
+  function onAtemStateChanged(pathToChange) {
+    if (changedUnder(pathToChange, target.statePath)) sendValues(false);
+  }
+
+  return { sendValues, onLevels, onAtemStateChanged };
+}
+
+const monitors = FADER_MONITOR.split(",")
+  .map((spec) => spec.trim())
+  .filter(Boolean)
+  .map((spec, index) => createMonitor(index, parseTarget(spec)));
+
 // --- Serial line handling ---
 
 function writeLine(line) {
   if (!port || !port.isOpen) return;
-  if (FADER_DEBUG && line[0] !== "L") console.log(`Fader >> ${line}`);
+  if (FADER_DEBUG && line[0] !== "L" && line[0] !== "M") console.log(`Fader >> ${line}`);
   port.write(`${line}\n`, (err) => {
     if (err) console.error("Fader: serial write failed:", err.message);
   });
@@ -353,6 +401,7 @@ function onLine(rawLine) {
         channel.reset();
         channel.syncToAtem();
       });
+      monitors.forEach((monitor) => monitor.sendValues(true));
       break;
     }
     case "P": {
@@ -446,6 +495,7 @@ function startFader(atemDevice) {
       channel.logGain();
       channel.syncToAtem();
     });
+    monitors.forEach((monitor) => monitor.sendValues(true));
     // Ask the ATEM to stream Fairlight levels (for the board's OLED meter)
     atem.startFairlightMixerSendLevels().catch((err) => {
       console.error("Fader: cannot start ATEM level stream:", err.message);
@@ -454,9 +504,11 @@ function startFader(atemDevice) {
   atem.on("levelChanged", (event) => {
     if (event.system !== "fairlight") return;
     channels.forEach((channel) => channel.onLevels(event));
+    monitors.forEach((monitor) => monitor.onLevels(event));
   });
   atem.on("stateChanged", (state, pathToChange) => {
     channels.forEach((channel) => channel.onAtemStateChanged(pathToChange));
+    monitors.forEach((monitor) => monitor.onAtemStateChanged(pathToChange));
   });
   connect();
 }
