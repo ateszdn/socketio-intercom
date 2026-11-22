@@ -11,9 +11,10 @@ const { SerialPort, ReadlineParser } = require("serialport");
 //                     ATEM's ~25/s, not shown by FADER_DEBUG)
 //                   M<i>:<left>:<right> (levels of display-only channel i,
 //                     see FADER_MONITOR; as L, not shown by FADER_DEBUG)
-//                   V<i>:<gain>:<pan> (input gain of display-only channel i
-//                     in 0.1 dB, pan -100 = L100 .. 100 = R100; sent when
-//                     the board is ready and when either changes)
+//                   V<i>:<gain>:<pan>:<mix> (input gain of display-only
+//                     channel i in 0.1 dB, pan -100 = L100 .. 100 = R100,
+//                     mix 1 Off / 2 On / 4 AFV; sent when the board is ready
+//                     and when any of them changes)
 // Hardware and firmware live in the atem-motorfader project.
 
 const FADER_PORT = process.env.FADER_PORT || ""; // empty = auto-detect
@@ -330,7 +331,11 @@ function createMonitor(index, target) {
     if (!faderStatus.ready || !atem) return;
     const props = target.getProps(atem.state);
     if (!props || typeof props.gain !== "number") return;
-    const line = `V${index}:${Math.round(props.gain / 10)}:${Math.round(props.balance / 100)}`;
+    // 4th field: mix option as the ATEM numbers it (1 Off, 2 On, 4 AFV),
+    // also set by the On/Off buttons on the ATEM itself
+    const line =
+      `V${index}:${Math.round(props.gain / 10)}:${Math.round(props.balance / 100)}` +
+      `:${props.mixOption ?? 0}`;
     if (!force && line === lastValues) return;
     lastValues = line;
     writeLine(line);

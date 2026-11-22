@@ -238,7 +238,7 @@ A motorized fader (ALPS RSA0N11M9A0J) on an Arduino Uno drives the ATEM's Fairli
 - On startup, and whenever the board reconnects, the fader moves to the current master gain
 - If the board is unplugged, the server retries every 5 seconds
 - The server streams the ATEM's Fairlight audio levels to the board (`L<ch>:<left>:<right>`, 0.1 dB, about 25 per second) for an optional OLED level meter on the ESP32 board
-- For the board's second display it also sends the levels (`M<i>:<left>:<right>`) and the input gain and pan (`V<i>:<gain 0.1 dB>:<pan -100..100>`) of display-only channels, `mic1` and `mic2` by default (`FADER_MONITOR`); gain and pan when the board is ready and whenever they change
+- For the board's second display it also sends the levels (`M<i>:<left>:<right>`) and the input gain, pan and mix state (`V<i>:<gain 0.1 dB>:<pan -100..100>:<mix 1 Off / 2 On / 4 AFV>`) of display-only channels, `mic1` and `mic2` by default (`FADER_MONITOR`); gain, pan and mix state when the board is ready and whenever they change
 
 The position-to-dB curve matches the fader in ATEM Software Control, so both sit at the same height: +10 dB at the top, then an even scale down to -20 dB at 33% of travel (0 dB at 78%, -10 dB at 55.5%), then steeper: -46 dB at 16.5% and -∞ at the bottom. Adjust it in the `TAPER` table in [utils/fader.js](utils/fader.js).
 
